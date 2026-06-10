@@ -1,116 +1,116 @@
-# AGENTS.md — Mapa de navegación para agentes de IA
+# AGENTS.md — Navigation map for AI agents
 
-> Este archivo es el **punto de entrada** para cualquier agente que trabaje en este
-> repositorio (Codex CLI, OpenCode, Aider, etc. lo leen automáticamente;
-> Claude Code lee `CLAUDE.md` primero y desde ahí llega aquí). NO es una
-> biblia de reglas: es un **mapa**. Lee solo lo que necesites cuando lo
-> necesites (divulgación progresiva).
-
----
-
-## 0. Tu rol por defecto
-
-Al recibir un prompt del usuario, actúas como **leader** (orquestador):
-descompones el trabajo y coordinas subagentes. Tú **no implementas**. El
-protocolo completo está en `agents/leader.md`. En resumen:
-
-```
-prompt del usuario
-       │
-       ▼
-leader (tú)
-   ─ lees este archivo
-   ─ corres ./harness/init.sh (verificación "del principio")
-   ─ preguntas: ¿feature o hotfix?
-   ─ eliges la tarea pending de menor id
-       │
-       ▼
-researcher → ⏸ validación del usuario → implementer → reviewer
-```
-
-> El plan que produce el `researcher` **no se ejecuta hasta que el usuario
-> lo valida**. El `leader` presenta el plan y espera el OK explícito antes
-> de lanzar al `implementer`.
-
-Los subagentes están definidos en `agents/`. Cómo los invocas depende del
-agente que esté ejecutando (Claude Code: tool Task con `subagent_type`;
-Codex/OpenCode: spawn explícito). Ver `harness/README.md` §Compatibilidad.
+> This file is the **entry point** for any agent working in this
+> repository (Codex CLI, OpenCode, Aider, etc. read it automatically;
+> Claude Code reads `CLAUDE.md` first and reaches here from there). It is NOT a
+> bible of rules: it is a **map**. Read only what you need when you
+> need it (progressive disclosure).
 
 ---
 
-## 1. Antes de empezar (obligatorio)
+## 0. Your default role
 
-1. Lee `harness/progress/current.md` para entender en qué estado quedó la última sesión.
-2. Corre `./harness/init.sh` una vez para confirmar que el entorno está verde (verificación "del principio"). Si sale en rojo, no avances.
-3. Antes de empezar a organizar haz la siguiente pregunta al usuario: `¿Es una feature o un hotfix?`.
-   - Si es una **feature** → lee `harness/feature_list.json` y `harness/progress/current.md`.
-   - Si es un **hotfix** → lee `harness/hotfix_list.json` y `harness/progress/current.md`.
-4. Lee el fichero del tipo de tarea (`harness/feature_list.json` o `harness/hotfix_list.json`) y elige **una tarea** con estado `pending`. No trabajes en más de una tarea a la vez.
+When you receive a prompt from the user, you act as the **leader** (orchestrator):
+you break down the work and coordinate subagents. You **do not implement**. The
+full protocol is in `agents/leader.md`. In summary:
 
-## 2. Mapa del repositorio
+```
+user prompt
+       │
+       ▼
+leader (you)
+   ─ read this file
+   ─ run ./harness/init.sh ("at the start" verification)
+   ─ ask: feature or hotfix?
+   ─ pick the pending task with the lowest id
+       │
+       ▼
+researcher → ⏸ user validation → implementer → reviewer
+```
 
-> Casi todo el arnés vive bajo `harness/`. Solo `CLAUDE.md`, `AGENTS.md` y
-> `agents/` quedan en la raíz del proyecto (los dos primeros porque son los
-> *entry files* que los agentes leen automáticamente; `agents/` para poder
-> copiarlo a `.claude/agents/`). `src/` y `tests/` son del proyecto, no del
-> arnés.
+> The plan that the `researcher` produces **is not executed until the user
+> validates it**. The `leader` presents the plan and waits for the explicit
+> OK before launching the `implementer`.
 
-| Archivo / carpeta            | Qué contiene                                              | Cuándo leerlo |
+The subagents are defined in `agents/`. How you invoke them depends on the
+agent that is running (Claude Code: Task tool with `subagent_type`;
+Codex/OpenCode: explicit spawn). See `harness/README.md` §Compatibility.
+
+---
+
+## 1. Before starting (mandatory)
+
+1. Read `harness/progress/current.md` to understand what state the last session ended in.
+2. Run `./harness/init.sh` once to confirm the environment is green ("at the start" verification). If it comes back red, do not proceed.
+3. Before you start organizing, ask the user the following question: `Is it a feature or a hotfix?`.
+   - If it is a **feature** → read `harness/feature_list.json` and `harness/progress/current.md`.
+   - If it is a **hotfix** → read `harness/hotfix_list.json` and `harness/progress/current.md`.
+4. Read the file for the task type (`harness/feature_list.json` or `harness/hotfix_list.json`) and pick **one task** with status `pending`. Do not work on more than one task at a time.
+
+## 2. Repository map
+
+> Almost the entire harness lives under `harness/`. Only `CLAUDE.md`, `AGENTS.md` and
+> `agents/` stay at the project root (the first two because they are the
+> *entry files* that agents read automatically; `agents/` so it can be
+> copied to `.claude/agents/`). `src/` and `tests/` belong to the project, not the
+> harness.
+
+| File / folder                | What it contains                                          | When to read it |
 |------------------------------|-----------------------------------------------------------|---------------|
-| `harness/feature_list.json`  | Lista de tareas con estado (pending / in_progress / done) | Si la tarea es feature, al empezar |
-| `harness/hotfix_list.json`   | Lista de tareas con estado (pending / in_progress / done) | Si la tarea es hotfix, al empezar |
-| `harness/progress/current.md`| Estado de la sesión actual                                | Siempre, al empezar |
-| `harness/progress/history.md`| Bitácora append-only de sesiones anteriores               | Si necesitas contexto histórico |
-| `harness/progress/feat_<id>/plan_<id>.md` | Plan que el `researcher` prepara para una feature. Temporal: se borra al cerrar la tarea | Implementer, antes de empezar (si existe) |
-| `harness/progress/feat_<id>/review_<id>.md` | Veredicto del `reviewer` (APPROVED / CHANGES_REQUESTED + checkpoints). Temporal: se borra al cerrar la tarea | Implementer, tras la revisión |
-| `harness/progress/hotfix_<id>/plan_<id>.md` | Plan que el `researcher` prepara para un hotfix. Temporal | Implementer, antes de empezar (si existe) |
-| `harness/progress/hotfix_<id>/review_<id>.md` | Veredicto del `reviewer` para un hotfix. Temporal | Implementer, tras la revisión |
-| `harness/progress/<agente>_<slug>.md` | Resumen histórico que el implementer escribe al cerrar una tarea (`done`). Persistente. Uno por agente: `researcher_`, `implementer_`, `reviewer_` | Para reconstruir contexto histórico |
-| `harness/docs/architecture.md` | Qué significa "hacer un buen trabajo" en este proyecto  | Antes de implementar |
-| `harness/docs/conventions.md`| Reglas de estilo, nombres, estructura                     | Antes de escribir código |
-| `harness/docs/verification.md` | Cómo verificar que tu trabajo funciona                  | Antes de declarar una tarea como `done` |
-| `harness/CHECKPOINTS.md`     | Criterios objetivos de "estado final correcto"            | Para auto-evaluarte |
-| `harness/init.sh`            | Verificación del entorno. Se corre desde la raíz: `./harness/init.sh` | Al principio (leader) y al final (reviewer) |
-| `agents/`                    | Definiciones de subagentes (líder, implementador, revisor, investigador) | Si orquestas trabajo |
-| `src/`                       | Código de la aplicación                                   | Para implementar |
-| `tests/`                     | Tests automáticos                                         | Para verificar |
+| `harness/feature_list.json`  | List of tasks with status (pending / in_progress / done)  | If the task is a feature, at the start |
+| `harness/hotfix_list.json`   | List of tasks with status (pending / in_progress / done)  | If the task is a hotfix, at the start |
+| `harness/progress/current.md`| State of the current session                              | Always, at the start |
+| `harness/progress/history.md`| Append-only log of previous sessions                      | If you need historical context |
+| `harness/progress/feat_<id>/plan_<id>.md` | Plan that the `researcher` prepares for a feature. Temporary: deleted when the task closes | Implementer, before starting (if it exists) |
+| `harness/progress/feat_<id>/review_<id>.md` | The `reviewer`'s verdict (APPROVED / CHANGES_REQUESTED + checkpoints). Temporary: deleted when the task closes | Implementer, after the review |
+| `harness/progress/hotfix_<id>/plan_<id>.md` | Plan that the `researcher` prepares for a hotfix. Temporary | Implementer, before starting (if it exists) |
+| `harness/progress/hotfix_<id>/review_<id>.md` | The `reviewer`'s verdict for a hotfix. Temporary | Implementer, after the review |
+| `harness/progress/<agent>_<slug>.md` | Historical summary that the implementer writes when closing a task (`done`). Persistent. One per agent: `researcher_`, `implementer_`, `reviewer_` | To reconstruct historical context |
+| `harness/docs/architecture.md` | What "doing a good job" means in this project           | Before implementing |
+| `harness/docs/conventions.md`| Rules for style, naming, structure                        | Before writing code |
+| `harness/docs/verification.md` | How to verify that your work works                      | Before declaring a task `done` |
+| `harness/CHECKPOINTS.md`     | Objective criteria for "correct final state"              | To self-evaluate |
+| `harness/init.sh`            | Environment verification. Run from the root: `./harness/init.sh` | At the start (leader) and at the end (reviewer) |
+| `agents/`                    | Subagent definitions (leader, implementer, reviewer, researcher) | If you orchestrate work |
+| `src/`                       | Application code                                          | To implement |
+| `tests/`                     | Automated tests                                           | To verify |
 
-## 3. Reglas duras (no negociables)
+## 3. Hard rules (non-negotiable)
 
-- **Una sola tarea a la vez.** No mezcles cambios de varias tareas en la misma sesión.
-- **No declares una tarea `done` sin pruebas verdes.**
-- **Documenta lo que haces** en `harness/progress/current.md` mientras trabajas, no al final.
-- **Deja el repositorio limpio** antes de cerrar la sesión (ver §5).
-- **Si no sabes algo, busca en `harness/docs/`** antes de inventarlo.
-- **`./harness/init.sh` lo corren solo el leader (al principio) y el reviewer
-  (verificación, incluye los tests del proyecto).** El implementer no ejecuta
-  tests ni `init.sh` por su cuenta, y no lo re-ejecuta al marcar `done`.
+- **One task at a time.** Do not mix changes from several tasks in the same session.
+- **Do not declare a task `done` without green tests.**
+- **Document what you do** in `harness/progress/current.md` while you work, not at the end.
+- **Leave the repository clean** before closing the session (see §5).
+- **If you don't know something, look in `harness/docs/`** before making it up.
+- **`./harness/init.sh` is run only by the leader (at the start) and the reviewer
+  (verification, includes the project tests).** The implementer does not run
+  tests or `init.sh` on its own, and does not re-run it when marking `done`.
 
-## 4. Cómo elegir una tarea
+## 4. How to pick a task
 
 ```
-1. Confirma con el usuario si es feature o hotfix.
-2. Abre harness/feature_list.json o harness/hotfix_list.json, según el tipo.
-3. Filtra por status == "pending".
-4. Coge la de menor "id".
-5. Cambia su status a "in_progress" y guarda.
-6. Anota en harness/progress/current.md: tarea, hora de inicio, plan breve.
+1. Confirm with the user whether it is a feature or a hotfix.
+2. Open harness/feature_list.json or harness/hotfix_list.json, depending on the type.
+3. Filter by status == "pending".
+4. Take the one with the lowest "id".
+5. Change its status to "in_progress" and save.
+6. Note in harness/progress/current.md: task, start time, brief plan.
 ```
 
-## 5. Cierre de sesión (lifecycle)
+## 5. Session close (lifecycle)
 
-Antes de terminar:
+Before finishing:
 
-1. **No re-ejecutes `./harness/init.sh`.** La verificación "del final" ya la
-   corrió el `reviewer` al aprobar (`APPROVED` ⇒ entorno verde). Volver a
-   correrlo aquí solo duplica los tests y ralentiza el cierre.
-2. Si la tarea está acabada: marca `status: "done"` en `harness/feature_list.json` o `harness/hotfix_list.json`.
-3. Mueve el resumen de `harness/progress/current.md` al final de `harness/progress/history.md`.
-4. Vacía `harness/progress/current.md` dejando solo la plantilla.
-5. No dejes archivos temporales, ni `print()` de debug, ni TODOs sin contexto.
+1. **Do not re-run `./harness/init.sh`.** The "at the end" verification was already
+   run by the `reviewer` on approval (`APPROVED` ⇒ green environment). Running it
+   again here only duplicates the tests and slows down the close.
+2. If the task is finished: set `status: "done"` in `harness/feature_list.json` or `harness/hotfix_list.json`.
+3. Move the summary from `harness/progress/current.md` to the end of `harness/progress/history.md`.
+4. Empty `harness/progress/current.md`, leaving only the template.
+5. Do not leave temporary files, debug `print()`s, or TODOs without context.
 
-## 6. Si te bloqueas
+## 6. If you get stuck
 
-- Relee la sección relevante de `harness/docs/`.
-- Si la herramienta no hace lo que esperas, **no inventes un workaround**:
-  documenta el bloqueo en `harness/progress/current.md` y para la sesión.
+- Re-read the relevant section of `harness/docs/`.
+- If the tool does not do what you expect, **do not invent a workaround**:
+  document the blocker in `harness/progress/current.md` and stop the session.

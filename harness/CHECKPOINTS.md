@@ -1,42 +1,42 @@
-# CHECKPOINTS.md — Criterios objetivos de "estado final correcto"
+# CHECKPOINTS.md — Objective criteria for "correct final state"
 
-> **Plantilla.** Esta es la lista que el `reviewer` recorre antes de aprobar
-> una tarea. Cada checkpoint debe ser **objetivamente verificable**: el
-> revisor lee el código y el resultado de `./harness/init.sh` y decide `[x]` o `[ ]`
-> sin opinar. Si un checkpoint es subjetivo ("código limpio"), está mal
-> escrito — reformúlalo en términos comprobables ("no hay funciones de más
-> de 50 líneas", "todo public API tiene test").
+> **Template.** This is the list the `reviewer` walks through before approving
+> a task. Each checkpoint must be **objectively verifiable**: the
+> reviewer reads the code and the output of `./harness/init.sh` and decides `[x]` or `[ ]`
+> without opining. If a checkpoint is subjective ("clean code"), it is poorly
+> written — reformulate it in verifiable terms ("there are no functions longer
+> than 50 lines", "every public API has a test").
 
-## Cómo se usa
+## How it is used
 
-- El `reviewer` recorre esta lista para cada tarea cerrada.
-- Marca `[x]` si se cumple, `[ ]` si no, indicando archivo y línea cuando
-  falle.
-- Cualquier `[ ]` ⇒ `CHANGES_REQUESTED`.
-- Esta lista crece con la experiencia del proyecto. Cuando un bug se cuela,
-  se añade el checkpoint que lo habría atrapado.
+- The `reviewer` walks through this list for each closed task.
+- Marks `[x]` if met, `[ ]` if not, noting file and line when it
+  fails.
+- Any `[ ]` ⇒ `CHANGES_REQUESTED`.
+- This list grows with the project's experience. When a bug slips through,
+  the checkpoint that would have caught it is added.
 
-## Checkpoints generales (válidos en cualquier proyecto)
+## General checkpoints (valid in any project)
 
-- **C1.** `./harness/init.sh` termina en verde.
-- **C2.** Todos los archivos nuevos siguen las convenciones de `harness/docs/conventions.md`.
-- **C3.** Cada unidad pública nueva o modificada en `src/` tiene su test.
-- **C4.** La tarea respeta `harness/docs/architecture.md` (capas, dependencias, módulos).
-- **C5.** `harness/progress/current.md` está actualizado y refleja lo que se hizo.
-- **C6.** No quedan TODO/FIXME sin contexto, `console.log`/`print` de debug, ni archivos temporales.
-- **C7.** El `acceptance` de la tarea (en `harness/feature_list.json` / `harness/hotfix_list.json`) se cumple punto por punto.
+- **C1.** `./harness/init.sh` finishes green.
+- **C2.** All new files follow the conventions in `harness/docs/conventions.md`.
+- **C3.** Every new or modified public unit in `src/` has its test.
+- **C4.** The task respects `harness/docs/architecture.md` (layers, dependencies, modules).
+- **C5.** `harness/progress/current.md` is up to date and reflects what was done.
+- **C6.** No TODO/FIXME left without context, no debug `console.log`/`print`, no temporary files.
+- **C7.** The task's `acceptance` (in `harness/feature_list.json` / `harness/hotfix_list.json`) is met point by point.
 
-## Checkpoints específicos del proyecto
+## Project-specific checkpoints
 
-> Añade aquí los que tu stack y dominio justifiquen. Ejemplos posibles:
+> Add here the ones your stack and domain justify. Possible examples:
 
-- **C8.** <p. ej. "Ninguna entidad de Prisma se devuelve desde un controller."> 
-- **C9.** <p. ej. "Toda operación multi-tabla está envuelta en `$transaction`."> 
-- **C10.** <p. ej. "Ningún servicio importa otro módulo saltándose el `exports`."> 
-- **C11.** <p. ej. "Todo endpoint nuevo tiene su e2e con assert de body."> 
-- **C12.** <p. ej. "No hay `any` en código nuevo de TypeScript."> 
+- **C8.** <e.g. "No Prisma entity is returned from a controller."> 
+- **C9.** <e.g. "Every multi-table operation is wrapped in `$transaction`."> 
+- **C10.** <e.g. "No service imports another module bypassing the `exports`."> 
+- **C11.** <e.g. "Every new endpoint has its e2e with a body assert."> 
+- **C12.** <e.g. "There is no `any` in new TypeScript code."> 
 
-> **Regla práctica:** mantén esta lista corta (10-15 ítems). Si se vuelve
-> inmanejable, conviértela en checks automatizados dentro de `./scripts/check.sh`
-> y deja en CHECKPOINTS.md solo las cosas que solo un ojo humano (o de modelo)
-> puede juzgar.
+> **Practical rule:** keep this list short (10-15 items). If it becomes
+> unmanageable, turn it into automated checks inside `./scripts/check.sh`
+> and leave in CHECKPOINTS.md only the things that only a human (or model)
+> eye can judge.

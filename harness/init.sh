@@ -1,31 +1,31 @@
 #!/usr/bin/env bash
-# init.sh — Verificación e inicialización del entorno
+# init.sh — Environment verification and initialization
 #
-# CUÁNDO se ejecuta (política de verificación):
-#   1. Al PRINCIPIO del proceso — el `leader` lo corre al arrancar la sesión
-#      para confirmar que el entorno está verde antes de tocar nada.
-#   2. Al FINAL — el `reviewer` lo corre como puerta única de verificación
-#      (incluye los tests del proyecto vía ./scripts/check.sh).
-# El `implementer` NO lo ejecuta — ni este script ni los tests por su cuenta:
-# escribe código + tests y deja la verificación al reviewer. Tampoco lo
-# re-ejecuta al cerrar la tarea: se fía del verde del reviewer.
+# WHEN it runs (verification policy):
+#   1. At the START of the process — the `leader` runs it when starting the
+#      session to confirm the environment is green before touching anything.
+#   2. At the END — the `reviewer` runs it as the single verification gate
+#      (includes the project's tests via ./scripts/check.sh).
+# The `implementer` does NOT run it — neither this script nor the tests on its
+# own: it writes code + tests and leaves verification to the reviewer. It also
+# does not re-run it when closing the task: it trusts the reviewer's green.
 #
-# Este script vive en `harness/` pero se ejecuta desde la raíz del proyecto
-# (p. ej. `./harness/init.sh`). Internamente hace `cd` a la raíz, así que
-# funciona sin importar desde dónde se invoque.
+# This script lives in `harness/` but runs from the project root
+# (e.g. `./harness/init.sh`). Internally it does a `cd` to the root, so
+# it works no matter where it is invoked from.
 #
-# El script es **stack-agnostic**: solo valida los ficheros base del arnés.
-# Los chequeos específicos del proyecto (toolchain, lint, typecheck, tests)
-# se delegan a `./scripts/check.sh` si existe. Crea ese fichero al adoptar
-# el arnés y mete ahí lo que tu stack necesite (node, python, go, rust...).
+# This script is **stack-agnostic**: it only validates the harness's base files.
+# Project-specific checks (toolchain, lint, typecheck, tests)
+# are delegated to `./scripts/check.sh` if it exists. Create that file when adopting
+# the harness and put there whatever your stack needs (node, python, go, rust...).
 #
-# Salida esperada: códigos de salida claros y bloques marcados con [OK]/[FAIL].
+# Expected output: clear exit codes and blocks marked with [OK]/[FAIL].
 
 set -u
 
-# Posicionarse en la raíz del proyecto (el padre de harness/), de modo que
-# las rutas relativas de abajo sean estables sea cual sea el cwd del agente.
-cd "$(dirname "$0")/.." || { echo "[FAIL]  no pude cd a la raíz del proyecto"; exit 1; }
+# Position ourselves at the project root (the parent of harness/), so that
+# the relative paths below are stable regardless of the agent's cwd.
+cd "$(dirname "$0")/.." || { echo "[FAIL]  could not cd to the project root"; exit 1; }
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -38,22 +38,22 @@ fail()  { printf "${RED}[FAIL]${NC}  %s\n" "$1"; }
 
 EXIT_CODE=0
 
-echo "── 1. Verificando archivos base del arnés ──────────────"
+echo "── 1. Verifying harness base files ─────────────────────"
 
 for f in AGENTS.md CLAUDE.md harness/feature_list.json harness/hotfix_list.json harness/progress/current.md harness/docs/architecture.md harness/docs/conventions.md harness/docs/verification.md harness/CHECKPOINTS.md; do
   if [ ! -f "$f" ]; then
-    fail "Falta archivo base: $f"
+    fail "Missing base file: $f"
     EXIT_CODE=1
   else
-    ok "Existe $f"
+    ok "$f exists"
   fi
 done
 
 echo ""
-echo "── 2. Validando feature_list.json y hotfix_list.json ───"
+echo "── 2. Validating feature_list.json and hotfix_list.json ─"
 
-# Validación JSON con python3 (preinstalado en macOS/Linux). Si no hay
-# python3 disponible, se omite la validación con un WARN.
+# JSON validation with python3 (preinstalled on macOS/Linux). If python3 is
+# not available, validation is skipped with a WARN.
 if command -v python3 >/dev/null 2>&1; then
   for list in harness/feature_list.json harness/hotfix_list.json; do
     [ -f "$list" ] || continue
@@ -67,45 +67,45 @@ try:
     items = data.get(key, [])
     in_progress = [i for i in items if i.get("status") == "in_progress"]
     if len(in_progress) > 1:
-        print(f"[FAIL]  {path}: {len(in_progress)} tareas en in_progress (máximo 1)")
+        print(f"[FAIL]  {path}: {len(in_progress)} tasks in in_progress (maximum 1)")
         sys.exit(1)
     for it in items:
         st = it.get("status")
         if st not in valid:
-            print(f"[FAIL]  {path}: estado inválido en {it.get('id')}: {st}")
+            print(f"[FAIL]  {path}: invalid status in {it.get('id')}: {st}")
             sys.exit(1)
-    print(f"[OK]    {path} válido ({len(items)} tareas)")
+    print(f"[OK]    {path} valid ({len(items)} tasks)")
 except Exception as e:
-    print(f"[FAIL]  {path} inválido: {e}")
+    print(f"[FAIL]  {path} invalid: {e}")
     sys.exit(1)
 PY
     if [ $? -ne 0 ]; then EXIT_CODE=1; fi
   done
 else
-  warn "python3 no disponible — se omite la validación de JSON"
+  warn "python3 not available — JSON validation skipped"
 fi
 
 echo ""
-echo "── 3. Hook de verificación del proyecto ────────────────"
+echo "── 3. Project verification hook ────────────────────────"
 
 if [ -f "./scripts/check.sh" ]; then
   if bash ./scripts/check.sh; then
-    ok "./scripts/check.sh pasó"
+    ok "./scripts/check.sh passed"
   else
-    fail "./scripts/check.sh falló"
+    fail "./scripts/check.sh failed"
     EXIT_CODE=1
   fi
 else
-  warn "./scripts/check.sh no existe — define ahí los chequeos del proyecto (lint/typecheck/test)"
+  warn "./scripts/check.sh does not exist — define the project checks there (lint/typecheck/test)"
 fi
 
 echo ""
-echo "── 4. Resumen ──────────────────────────────────────────"
+echo "── 4. Summary ──────────────────────────────────────────"
 
 if [ $EXIT_CODE -eq 0 ]; then
-  ok "Entorno listo. Puedes empezar a trabajar."
+  ok "Environment ready. You can start working."
 else
-  fail "Entorno NO está listo. Resuelve los errores antes de avanzar."
+  fail "Environment is NOT ready. Fix the errors before proceeding."
 fi
 
 exit $EXIT_CODE

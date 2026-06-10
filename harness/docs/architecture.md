@@ -1,91 +1,91 @@
-# Arquitectura — Qué significa "hacer un buen trabajo"
+# Architecture — What it means to "do a good job"
 
-> **Plantilla.** Rellena las secciones marcadas con `<...>` con la realidad
-> de tu proyecto. Este documento define el estándar de calidad. Los agentes
-> revisores evalúan código contra este archivo. **Si no está aquí, no es un
-> requisito.**
+> **Template.** Fill in the sections marked with `<...>` with the reality
+> of your project. This document defines the quality standard. The reviewer
+> agents evaluate code against this file. **If it isn't here, it isn't a
+> requirement.**
 
-## Contexto
+## Context
 
-<Describe en 2-4 frases qué hace el proyecto, quién lo usa y qué problema
-resuelve. Evita jerga interna. Ejemplo: "App web donde el usuario configura
-X, el sistema scrapea Y, y devuelve Z.">
+<Describe in 2-4 sentences what the project does, who uses it and what problem
+it solves. Avoid internal jargon. Example: "Web app where the user configures
+X, the system scrapes Y, and returns Z.">
 
-<Alcance actual y stack principal. Ejemplo: "API HTTP REST en NestJS +
-PostgreSQL (vía Prisma). El módulo de scraping entrará más adelante.">
+<Current scope and main stack. Example: "REST HTTP API in NestJS +
+PostgreSQL (via Prisma). The scraping module will come later.">
 
-## Principios
+## Principles
 
-> Lista las decisiones arquitectónicas que un revisor debe poder citar para
-> aprobar o rechazar un cambio. No incluyas reglas de estilo (eso va en
-> `conventions.md`). Aquí van las decisiones estructurales que, si se
-> rompen, justifican un `CHANGES_REQUESTED`.
+> List the architectural decisions a reviewer must be able to cite to
+> approve or reject a change. Don't include style rules (those go in
+> `conventions.md`). This is for the structural decisions that, if
+> broken, justify a `CHANGES_REQUESTED`.
 
-1. **<Decisión 1>.**
-   <Por qué. Ejemplo: "Plain framework, tres capas y solo tres
-   (controller → service → repository). No introducir facades, use-cases,
-   puertos/adaptadores ni CQRS hasta que un PR concreto demuestre que la
-   duplicación lo justifica.">
+1. **<Decision 1>.**
+   <Why. Example: "Plain framework, three layers and only three
+   (controller → service → repository). Don't introduce facades, use-cases,
+   ports/adapters or CQRS until a concrete PR proves that the
+   duplication justifies it.">
 
-2. **<Decisión 2>.**
-   <Por qué. Ejemplo: "El schema de DB es interno. El contrato externo son
-   los DTOs. La API debe poder evolucionar sin tocar la DB, y la DB sin
-   romper la API.">
+2. **<Decision 2>.**
+   <Why. Example: "The DB schema is internal. The external contract is
+   the DTOs. The API must be able to evolve without touching the DB, and the DB
+   without breaking the API.">
 
-3. **<Decisión 3>.**
-   <Por qué. Ejemplo: "Errores explícitos del dominio en
-   `<dominio>/<dominio>.errors.ts`. Un filter global los traduce a HTTP.">
+3. **<Decision 3>.**
+   <Why. Example: "Explicit domain errors in
+   `<domain>/<domain>.errors.ts`. A global filter translates them to HTTP.">
 
-4. **<Decisión 4>.**
-   <Por qué. Ejemplo: "Inyección por constructor. Nada de singletons
-   manuales ni acceso global al cliente de DB.">
+4. **<Decision 4>.**
+   <Why. Example: "Constructor injection. No manual singletons
+   nor global access to the DB client.">
 
-5. **<Decisión 5>.**
-   <Por qué. Ejemplo: "Un módulo, un dominio. Los módulos se comunican solo
-   por su API pública (`exports`).">
+5. **<Decision 5>.**
+   <Why. Example: "One module, one domain. Modules communicate only
+   through their public API (`exports`).">
 
-## Flujo de datos
+## Data flow
 
-> Diagrama ASCII del camino que recorre una request típica desde la entrada
-> hasta la persistencia y vuelta. Mantenlo simple: 5-7 capas como mucho.
+> ASCII diagram of the path a typical request travels from entry
+> to persistence and back. Keep it simple: 5-7 layers at most.
 
 ```
-<entrada>
+<entry>
     │
     ▼
-<capa 1>   ← <qué hace>
+<layer 1>   ← <what it does>
     │
     ▼
-<capa 2>   ← <qué hace>
+<layer 2>   ← <what it does>
     │
     ▼
-<capa 3>   ← <qué hace>
+<layer 3>   ← <what it does>
     │
     ▼
-<persistencia / salida>
+<persistence / output>
 ```
 
-<Cualquier nota sobre el flujo: cómo se mapean entradas/salidas, dónde se
-captan errores, qué se loguea automáticamente.>
+<Any note about the flow: how inputs/outputs are mapped, where errors are
+caught, what is logged automatically.>
 
-## Qué NO hacer
+## What NOT to do
 
-> Anti-patrones concretos. Cada bullet debe ser falsable: un revisor tiene
-> que poder señalar una línea de código y decir "esto viola la regla X".
+> Concrete anti-patterns. Each bullet must be falsifiable: a reviewer has
+> to be able to point at a line of code and say "this violates rule X".
 
-- **No <anti-patrón 1>.** <Por qué duele cuando se hace.>
+- **Don't <anti-pattern 1>.** <Why it hurts when done.>
 
-- **No <anti-patrón 2>.** <Por qué duele cuando se hace.>
+- **Don't <anti-pattern 2>.** <Why it hurts when done.>
 
-- **No <anti-patrón 3>.** <Por qué duele cuando se hace.>
+- **Don't <anti-pattern 3>.** <Why it hurts when done.>
 
-- **No <anti-patrón 4>.** <Por qué duele cuando se hace.>
+- **Don't <anti-pattern 4>.** <Why it hurts when done.>
 
-- **No <anti-patrón 5>.** <Por qué duele cuando se hace.>
+- **Don't <anti-pattern 5>.** <Why it hurts when done.>
 
 ---
 
-> **Cómo evoluciona este documento.** Cuando una decisión nueva aparece en
-> un PR y se acepta como regla del proyecto, se añade aquí. Cuando una regla
-> deja de aplicar (cambio de stack, refactor grande), se borra. Mantener este
-> fichero corto y vigente importa más que tenerlo completo.
+> **How this document evolves.** When a new decision appears in
+> a PR and is accepted as a project rule, it gets added here. When a rule
+> no longer applies (stack change, big refactor), it gets deleted. Keeping this
+> file short and current matters more than having it complete.

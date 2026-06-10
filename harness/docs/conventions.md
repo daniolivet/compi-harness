@@ -1,120 +1,120 @@
-# Convenciones de código
+# Code conventions
 
-> **Plantilla.** Rellena con las convenciones reales de tu proyecto.
-> Homogeneidad extrema. La IA predice mejor cuando el repositorio se parece
-> a sí mismo en todas partes. Si una convención no está aquí, **no es
-> oblitatoria** — los revisores solo deben rechazar cambios que violen
-> reglas escritas.
+> **Template.** Fill in with your project's real conventions.
+> Extreme homogeneity. The AI predicts better when the repository looks
+> like itself everywhere. If a convention isn't here, **it isn't
+> mandatory** — reviewers should only reject changes that violate written
+> rules.
 
-## Estilo del lenguaje
+## Language style
 
-- **Lenguaje y versión:** <p. ej. TypeScript 5.x con `strict: true`, Python 3.12, Go 1.22, Rust 1.78>
-- **Target / runtime:** <p. ej. Node 20 LTS, CPython 3.12, JVM 21>
-- **Formato:** <herramienta + reglas. P. ej. Prettier (ancho 100, comillas simples)>
-- **Linter:** <herramienta + ruleset. P. ej. ESLint con recommended-type-checked>
-- **Imports:** <orden y agrupación. P. ej. builtins, externos, alias del proyecto, relativos>
-- **Strings / tipos / control flow:** <reglas específicas del lenguaje que importen>
-- **Tipado:** <dónde es obligatorio explicitar tipos y dónde se infiere>
-- **Prohibido:** <p. ej. `any`, `var`, mutación global, importaciones circulares>
+- **Language and version:** <e.g. TypeScript 5.x with `strict: true`, Python 3.12, Go 1.22, Rust 1.78>
+- **Target / runtime:** <e.g. Node 20 LTS, CPython 3.12, JVM 21>
+- **Formatting:** <tool + rules. E.g. Prettier (width 100, single quotes)>
+- **Linter:** <tool + ruleset. E.g. ESLint with recommended-type-checked>
+- **Imports:** <order and grouping. E.g. builtins, externals, project aliases, relative>
+- **Strings / types / control flow:** <language-specific rules that matter>
+- **Typing:** <where types must be made explicit and where they are inferred>
+- **Forbidden:** <e.g. `any`, `var`, global mutation, circular imports>
 
-## Nombres
+## Naming
 
-| Tipo                       | Convención        | Ejemplo                       |
+| Type                       | Convention        | Example                       |
 |----------------------------|-------------------|-------------------------------|
-| Ficheros                   | `<convención>`    | `<ejemplo>`                   |
-| Tipos / Clases             | `<convención>`    | `<ejemplo>`                   |
-| Funciones / variables      | `<convención>`    | `<ejemplo>`                   |
-| Constantes de módulo       | `<convención>`    | `<ejemplo>`                   |
-| Privadas                   | `<convención>`    | `<ejemplo>`                   |
-| Enums                      | `<convención>`    | `<ejemplo>`                   |
+| Files                      | `<convention>`    | `<example>`                   |
+| Types / Classes            | `<convention>`    | `<example>`                   |
+| Functions / variables      | `<convention>`    | `<example>`                   |
+| Module constants           | `<convention>`    | `<example>`                   |
+| Private                    | `<convention>`    | `<example>`                   |
+| Enums                      | `<convention>`    | `<example>`                   |
 
-### Sufijos por rol (si aplica)
+### Suffixes by role (if applicable)
 
-> Si tu stack tiene roles bien definidos (controller, service, repository,
-> view, handler...), documenta aquí los sufijos esperados de fichero y
-> clase. Si no aplica, borra esta sección.
+> If your stack has well-defined roles (controller, service, repository,
+> view, handler...), document here the expected file and class suffixes.
+> If it doesn't apply, delete this section.
 
-| Rol                    | Sufijo de fichero       | Sufijo de tipo      |
+| Role                   | File suffix             | Type suffix         |
 |------------------------|-------------------------|---------------------|
-| <Rol>                  | `<sufijo>`              | `<sufijo>`          |
+| <Role>                 | `<suffix>`              | `<suffix>`          |
 
-## Estructura de archivo
+## File structure
 
-> Cómo se organiza un módulo / paquete / dominio. Pon un ejemplo concreto
-> de cómo se ve un dominio bien estructurado.
+> How a module / package / domain is organized. Give a concrete example
+> of what a well-structured domain looks like.
 
 ```
-src/<dominio>/
-├── <fichero1>
-├── <fichero2>
-└── <subcarpeta>/
-    └── <fichero>
+src/<domain>/
+├── <file1>
+├── <file2>
+└── <subfolder>/
+    └── <file>
 ```
 
-<Reglas sobre orden de imports, cabecera de fichero, separadores, etc.>
+<Rules about import order, file header, separators, etc.>
 
-## Validación de entradas
+## Input validation
 
-> Cómo se validan las entradas que cruzan la frontera del sistema (HTTP,
-> CLI args, mensajes de cola, archivos externos). El objetivo: no procesar
-> nunca datos sin tipo conocido.
+> How the inputs that cross the system boundary are validated (HTTP,
+> CLI args, queue messages, external files). The goal: never process
+> data with an unknown type.
 
-- <Regla 1>
-- <Regla 2>
-- <Ejemplo de código>
+- <Rule 1>
+- <Rule 2>
+- <Code example>
 
-## Inyección de dependencias / acoplamiento
+## Dependency injection / coupling
 
-- <Cómo se resuelven dependencias. P. ej. constructor injection, FX,
-  contenedores DI, top-level wiring en `main`.>
-- <Qué está prohibido: singletons globales, `new` directo de servicios,
-  acceso a estado global desde lógica de dominio.>
+- <How dependencies are resolved. E.g. constructor injection, FX,
+  DI containers, top-level wiring in `main`.>
+- <What is forbidden: global singletons, direct `new` of services,
+  access to global state from domain logic.>
 
 ## Tests
 
-- **Framework:** <p. ej. Jest, pytest, go test, cargo test>
-- **Ubicación:** <p. ej. junto al fichero probado, en `tests/` separado>
-- **Naming:** <p. ej. `<unidad>.spec.ts`, `test_<unidad>.py`>
-- **Estructura mínima de un test:** <describe → it / arrange-act-assert>
-- **Aislamiento:** <cómo se garantiza que los tests no comparten estado>
-- **Mocks:** <qué se mockea y qué no. Ver `verification.md` para detalles>
+- **Framework:** <e.g. Jest, pytest, go test, cargo test>
+- **Location:** <e.g. next to the file under test, in a separate `tests/`>
+- **Naming:** <e.g. `<unit>.spec.ts`, `test_<unit>.py`>
+- **Minimum structure of a test:** <describe → it / arrange-act-assert>
+- **Isolation:** <how it is guaranteed that tests don't share state>
+- **Mocks:** <what is mocked and what isn't. See `verification.md` for details>
 
-## Manejo de errores
+## Error handling
 
-> Cómo se modelan errores en este proyecto. Lenguajes con excepciones,
-> con `Result`/`Either`, con error codes... cada uno tiene reglas distintas.
+> How errors are modeled in this project. Languages with exceptions,
+> with `Result`/`Either`, with error codes... each has different rules.
 
-- <Dónde se definen los tipos de error>
-- <Quién los lanza / produce>
-- <Quién los traduce a la respuesta externa (HTTP status, exit code, mensaje)>
-- <Qué NO se hace: `try/catch` defensivo, swallow silencioso, stack traces al cliente>
-- <Ejemplo de código>
+- <Where the error types are defined>
+- <Who throws / produces them>
+- <Who translates them into the external response (HTTP status, exit code, message)>
+- <What is NOT done: defensive `try/catch`, silent swallow, stack traces to the client>
+- <Code example>
 
 ## Logging
 
-> Política de logs. Si esto no se documenta, cada agente inventará su propio
-> estilo y el repo acaba con `console.log`, `print`, `fmt.Println` y un logger
-> estructurado a medias.
+> Log policy. If this isn't documented, every agent will invent its own
+> style and the repo ends up with `console.log`, `print`, `fmt.Println` and a
+> half-baked structured logger.
 
-- **Logger:** <librería + por qué>
-- **Configuración:** <dónde se registra, qué se redacta, qué se incluye automático>
-- **Niveles:** <cuándo usar error/warn/info/debug>
-- **Estructurado vs string:** <regla. P. ej. "datos como campo aparte, nunca concatenados al mensaje">
-- **Prohibido en `src/`:** <p. ej. `console.log`, `print`, `fmt.Println` fuera del logger oficial>
+- **Logger:** <library + why>
+- **Configuration:** <where it is set up, what is redacted, what is included automatically>
+- **Levels:** <when to use error/warn/info/debug>
+- **Structured vs string:** <rule. E.g. "data as a separate field, never concatenated into the message">
+- **Forbidden in `src/`:** <e.g. `console.log`, `print`, `fmt.Println` outside the official logger>
 
-## Asincronía / concurrencia
+## Async / concurrency
 
-> Si el lenguaje tiene un modelo asíncrono propio (async/await, goroutines,
-> threads, actors), documenta cómo se usa aquí.
+> If the language has its own async model (async/await, goroutines,
+> threads, actors), document how it is used here.
 
-- <Reglas: cómo se compone, qué patrones se evitan, cómo se manejan errores async>
-- <Linter rule específica si aplica (p. ej. `no-floating-promises`)>
+- <Rules: how it is composed, what patterns are avoided, how async errors are handled>
+- <Specific linter rule if applicable (e.g. `no-floating-promises`)>
 
-## Comentarios
+## Comments
 
-Por defecto **no** se escriben. Solo se permiten cuando explican un *por qué*
-no obvio (p. ej. workaround documentado, invariante sutil, decisión de
-diseño que un nombre no puede expresar). Los nombres deben hacer el resto.
+By default they are **not** written. They are only allowed when they explain a non-obvious
+*why* (e.g. documented workaround, subtle invariant, design
+decision a name can't express). Names should do the rest.
 
-<Si tu proyecto exporta una librería pública, documenta aquí el formato de
-docstrings/JSDoc/rustdoc esperado en la API exportada.>
+<If your project exports a public library, document here the format of the
+docstrings/JSDoc/rustdoc expected on the exported API.>

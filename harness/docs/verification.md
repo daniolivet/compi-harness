@@ -1,130 +1,130 @@
-# Verificación — Cómo demostrar que el trabajo funciona
+# Verification — How to prove the work works
 
-> **Plantilla.** Rellena con la política de verificación real de tu proyecto.
-> Regla de oro: **el agente no dice "funciona", lo demuestra**.
-> Toda tarea termina con evidencia ejecutable, no con afirmaciones.
+> **Template.** Fill in with your project's real verification policy.
+> Golden rule: **the agent doesn't say "it works", it proves it**.
+> Every task ends with executable evidence, not with claims.
 
-## Política de mocking
+## Mocking policy
 
-> Antes de los niveles, una regla que aplica a todo lo que sigue. Define
-> qué se mockea y qué no. Sin esto, cada agente inventa su propia política
-> y los tests "verdes" empiezan a divergir de producción.
+> Before the levels, a rule that applies to everything that follows. Define
+> what is mocked and what isn't. Without this, every agent invents its own policy
+> and the "green" tests start to diverge from production.
 
-- **<Regla 1>.** <Ejemplo: "DB siempre real (testcontainer). Cero mocks
-  de cliente de DB. La divergencia mock-vs-real ha sido fuente de incidentes
-  antes.">
-- **<Regla 2>.** <Ejemplo: "Solo se mockea I/O fuera del proceso: HTTP
-  clients a terceros, colas, S3, webhooks salientes.">
-- **<Regla 3>.** <Ejemplo: "Si una dependencia no es I/O externo, no se
-  mockea. Punto.">
+- **<Rule 1>.** <Example: "DB always real (testcontainer). Zero mocks
+  of the DB client. The mock-vs-real divergence has been a source of incidents
+  before.">
+- **<Rule 2>.** <Example: "Only out-of-process I/O is mocked: third-party HTTP
+  clients, queues, S3, outgoing webhooks.">
+- **<Rule 3>.** <Example: "If a dependency isn't external I/O, it isn't
+  mocked. Period.">
 
-## Niveles de verificación
+## Verification levels
 
-### Nivel 1 — Tests unitarios (obligatorio)
+### Level 1 — Unit tests (mandatory)
 
-> Qué se considera "unit test" en este proyecto, qué cubre cada uno y cómo
-> se ejecutan. Tienes que poder leer esto y saber, sin abrir código, qué
-> esperas que tenga un PR nuevo.
+> What counts as a "unit test" in this project, what each one covers and how
+> they are run. You have to be able to read this and know, without opening code, what
+> you expect a new PR to have.
 
-Toda unidad pública con lógica propia (<services / handlers / funciones
-puras>) tiene su test que:
+Every public unit with its own logic (<services / handlers / pure
+functions>) has its test that:
 
-1. Cubre el camino feliz.
-2. Cubre al menos un camino de error si la función puede fallar.
-3. <Regla específica de tu stack — p. ej. "Si toca persistencia, lo hace
-   contra DB real vía testcontainer">.
+1. Covers the happy path.
+2. Covers at least one error path if the function can fail.
+3. <Stack-specific rule — e.g. "If it touches persistence, it does so
+   against a real DB via testcontainer">.
 
-Estructura mínima:
+Minimum structure:
 
-```<lenguaje>
-<bloque describe/it o equivalente>
-  <test camino feliz>
-  <test camino error con assert del tipo de error concreto>
+```<language>
+<describe/it block or equivalent>
+  <happy path test>
+  <error path test asserting the concrete error type>
 ```
 
-Comando:
+Command:
 ```bash
-<comando para ejecutar unit tests>
+<command to run unit tests>
 ```
 
-### Nivel 2 — E2E / integración (obligatorio si aplica)
+### Level 2 — E2E / integration (mandatory if applicable)
 
-> Si tu proyecto expone una superficie externa (HTTP, CLI, gRPC, cola),
-> describe aquí cómo se verifica esa superficie end-to-end.
+> If your project exposes an external surface (HTTP, CLI, gRPC, queue),
+> describe here how that surface is verified end-to-end.
 
-Cada <endpoint / comando / handler> nuevo o modificado tiene un test e2e
-que:
+Each new or modified <endpoint / command / handler> has an e2e test
+that:
 
-1. <Arranca el sistema real (no mocks internos)>
-2. <Configura el mismo middleware / pipeline que producción>
-3. <Usa dependencias reales vía testcontainer o sandbox>
-4. <Llama a la superficie externa y verifica respuesta + efecto observable>
+1. <Starts the real system (no internal mocks)>
+2. <Configures the same middleware / pipeline as production>
+3. <Uses real dependencies via testcontainer or sandbox>
+4. <Calls the external surface and verifies response + observable effect>
 
-Esqueleto:
+Skeleton:
 
-```<lenguaje>
-<ejemplo de test e2e mínimo>
+```<language>
+<minimal e2e test example>
 ```
 
-Cada e2e cubre, como mínimo: camino feliz + un error de validación o de
-dominio relevante.
+Each e2e covers, at minimum: happy path + a relevant validation or
+domain error.
 
-Comando:
+Command:
 ```bash
-<comando para ejecutar e2e>
+<command to run e2e>
 ```
 
-### Nivel 3 — Smoke manual (opcional pero recomendado)
+### Level 3 — Manual smoke (optional but recommended)
 
-> Cuándo merece la pena levantar la app real y golpearla a mano antes de
-> cerrar la tarea. Útil para descubrir cosas que el test ignora (CORS,
-> headers, formato de error, latencia inesperada).
+> When it's worth bringing up the real app and hitting it by hand before
+> closing the task. Useful for discovering things the test ignores (CORS,
+> headers, error format, unexpected latency).
 
-Antes de cerrar la sesión, <levanta la app / ejecuta el CLI / abre la UI>
-y prueba el cambio contra un entorno efímero:
+Before closing the session, <bring up the app / run the CLI / open the UI>
+and try the change against an ephemeral environment:
 
 ```bash
-<comando para arrancar el sistema en modo dev>
-# en otra terminal o navegador
-<comando para invocar la funcionalidad nueva>
+<command to start the system in dev mode>
+# in another terminal or browser
+<command to invoke the new functionality>
 ```
 
-Si el comportamiento difiere de lo que cubre el test, **falta un caso de
-test** — no se cierra la tarea hasta añadirlo.
+If the behavior differs from what the test covers, **a test case is
+missing** — the task isn't closed until it's added.
 
-## Anti-patrones (no hacer)
+## Anti-patterns (don't do)
 
-- ❌ **"He añadido el cambio, debería funcionar."** Sin test ejecutable no
-  se cierra nada.
-- ❌ **Mockear lo que la política de mocking dice que no se mockea.** Si
-  toca persistencia y tu política dice "DB real", no hay atajo.
-- ❌ **Test que solo comprueba que la función no lanza.** Tiene que
-  assertear el resultado o el efecto observable.
-- ❌ **E2E que solo verifica el status code / exit code.** El body /
-  output es parte del contrato — también se assertea.
-- ❌ **Compartir estado entre tests sin reset.** Cada test deja la DB /
-  filesystem / cola como la encontró.
-- ❌ **Snapshots gigantes de respuestas.** Snapshot mata revisión.
-  Assertear campos concretos.
-- ❌ **Marcar la tarea como `done` sin pasar `./harness/init.sh`.**
+- ❌ **"I added the change, it should work."** Without an executable test
+  nothing gets closed.
+- ❌ **Mocking what the mocking policy says not to mock.** If it
+  touches persistence and your policy says "real DB", there's no shortcut.
+- ❌ **A test that only checks the function doesn't throw.** It has to
+  assert the result or the observable effect.
+- ❌ **An e2e that only verifies the status code / exit code.** The body /
+  output is part of the contract — it's asserted too.
+- ❌ **Sharing state between tests without reset.** Each test leaves the DB /
+  filesystem / queue as it found it.
+- ❌ **Giant response snapshots.** A snapshot kills review.
+  Assert concrete fields.
+- ❌ **Marking the task as `done` without passing `./harness/init.sh`.**
 
-## Verificación final antes de cerrar
+## Final verification before closing
 
-`./harness/init.sh` lo corre el `reviewer` como **puerta única de
-verificación** (incluye los tests del proyecto vía `./scripts/check.sh`). El
-`implementer` no ejecuta tests ni `init.sh` por su cuenta: escribe código +
-tests y deja la verificación al reviewer; tampoco lo re-ejecuta al marcar
-`done` (se fía del `APPROVED`). El `leader` lo corre una vez al principio
-para confirmar que el entorno está verde antes de arrancar.
+`./harness/init.sh` is run by the `reviewer` as the **single verification
+gate** (it includes the project tests via `./scripts/check.sh`). The
+`implementer` does not run tests or `init.sh` on its own: it writes code +
+tests and leaves verification to the reviewer; it also doesn't re-run it when marking
+`done` (it trusts the `APPROVED`). The `leader` runs it once at the start
+to confirm the environment is green before kicking off.
 
 ```bash
 ./harness/init.sh
 ```
 
-Internamente `harness/init.sh` delega los chequeos específicos del proyecto a
-`./scripts/check.sh` (en la raíz del proyecto) si existe — define ahí lo que
-sea relevante para tu stack (lint + typecheck + unit + e2e + build).
+Internally `harness/init.sh` delegates the project-specific checks to
+`./scripts/check.sh` (at the project root) if it exists — define there whatever
+is relevant for your stack (lint + typecheck + unit + e2e + build).
 
-Si `./harness/init.sh` está rojo, **no** se marca nada como `done`. El bloqueo
-se anota en `harness/progress/current.md` con el comando que falla y la salida
-relevante.
+If `./harness/init.sh` is red, **nothing** is marked as `done`. The blocker
+is noted in `harness/progress/current.md` with the failing command and the
+relevant output.

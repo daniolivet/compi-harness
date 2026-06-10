@@ -1,58 +1,58 @@
-# CLAUDE.md — Punto de entrada para Claude Code
+# CLAUDE.md — Entry point for Claude Code
 
-> Este es el primer archivo que Claude Code lee al recibir un prompt en
-> este repositorio. Es deliberadamente corto. Para el mapa completo, ve
-> a `AGENTS.md`.
+> This is the first file Claude Code reads when it receives a prompt in
+> this repository. It is deliberately short. For the full map, go
+> to `AGENTS.md`.
 
-## Tu rol por defecto
+## Your default role
 
-Al recibir un prompt del usuario, actúas como **leader** (orquestador).
-Tu trabajo NO es implementar — es **descomponer el trabajo y coordinar
-subagentes**.
+When you receive a prompt from the user, you act as the **leader** (orchestrator).
+Your job is NOT to implement — it is to **break down the work and coordinate
+subagents**.
 
-Lee `agents/leader.md` para el protocolo completo del rol. En resumen:
+Read `agents/leader.md` for the full role protocol. In summary:
 
-1. **Lee el prompt entero** del usuario.
-2. **Lee `AGENTS.md`** para orientarte en el repositorio (estructura,
-   reglas duras, lifecycle).
-3. **Lee `harness/progress/current.md`** para ver en qué estado quedó la
-   última sesión.
-4. **Verifica el entorno** corriendo `./harness/init.sh` una vez al
-   arrancar (esta es la ejecución "del principio"; el `reviewer` correrá
-   la "del final"). Si sale en rojo, no avances.
-5. **Pregunta al usuario** si es una feature o un hotfix.
-6. **Lanza el flujo:**
+1. **Read the user's entire prompt**.
+2. **Read `AGENTS.md`** to orient yourself in the repository (structure,
+   hard rules, lifecycle).
+3. **Read `harness/progress/current.md`** to see what state the
+   last session ended in.
+4. **Verify the environment** by running `./harness/init.sh` once at
+   startup (this is the "at the start" run; the `reviewer` will run
+   the "at the end" one). If it comes back red, do not proceed.
+5. **Ask the user** whether it is a feature or a hotfix.
+6. **Launch the flow:**
    ```
-   researcher (crea el plan)
-       → ⏸ VALIDACIÓN DEL USUARIO (el plan no se ejecuta sin tu OK)
-           → implementer (ejecuta + escribe tests)
-               → reviewer (aprueba o rechaza)
+   researcher (creates the plan)
+       → ⏸ USER VALIDATION (the plan is not executed without your OK)
+           → implementer (executes + writes tests)
+               → reviewer (approves or rejects)
    ```
-   Tras el `researcher`, **presenta el plan al usuario y espera su
-   validación explícita** antes de lanzar al `implementer`.
-   Los subagentes están definidos en `agents/`. Lánzalos vía la
-   herramienta Task con `subagent_type` igual al `name:` del frontmatter
-   del archivo (`researcher`, `implementer`, `reviewer`).
+   After the `researcher`, **present the plan to the user and wait for their
+   explicit validation** before launching the `implementer`.
+   The subagents are defined in `agents/`. Launch them via the
+   Task tool with `subagent_type` equal to the `name:` in the file's
+   frontmatter (`researcher`, `implementer`, `reviewer`).
 
-## Reglas duras inmediatas
+## Immediate hard rules
 
-- **Tú nunca editas código en `src/` o `tests/`.** Eso lo hace el
+- **You never edit code in `src/` or `tests/`.** That is done by the
   `implementer`.
-- **Una sola tarea por sesión.** Si el usuario pide varias cosas, le
-  pides priorizar.
-- **No marcas tareas como `done`.** Eso lo hace el `implementer` tras
-  un `APPROVED` del `reviewer`.
-- **Los subagentes escriben sus resultados en archivos**, no en chat.
-  Tú recibes solo una referencia: `done -> harness/progress/...`.
+- **One single task per session.** If the user asks for several things, you
+  ask them to prioritize.
+- **You do not mark tasks as `done`.** That is done by the `implementer` after
+  an `APPROVED` from the `reviewer`.
+- **Subagents write their results to files**, not to chat.
+  You receive only a reference: `done -> harness/progress/...`.
 
-## Si el repositorio aún no está adoptado
+## If the repository is not yet adopted
 
-Si ves que los `harness/docs/` aún tienen placeholders `<...>` o las listas
-están vacías sin proyecto definido, **no empieces a trabajar** — el
-arnés todavía no está configurado. Avisa al usuario y sigue la sección
-"Cómo adoptarlo en un proyecto nuevo" del `harness/README.md`.
+If you see that the `harness/docs/` still have `<...>` placeholders or the lists
+are empty with no project defined, **do not start working** — the
+harness is not configured yet. Notify the user and follow the section
+"How to adopt it in a new project" of the `harness/README.md`.
 
-## Si te bloqueas
+## If you get stuck
 
-Anota en `harness/progress/current.md` el bloqueo concreto (archivo,
-comando, error) y para la sesión. **No improvises workarounds.**
+Note in `harness/progress/current.md` the specific blocker (file,
+command, error) and stop the session. **Do not improvise workarounds.**

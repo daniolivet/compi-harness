@@ -1,190 +1,190 @@
 # compi-harness
 
-Un **arnés de trabajo para agentes de IA** que estructura el ciclo
-*investigar → implementar → revisar* en un repositorio. Stack-agnóstico
-(no asume ningún lenguaje ni framework concreto) y **agnóstico al agente**:
-funciona con Claude Code, OpenAI Codex CLI, OpenCode, Cursor, Aider y, en
-general, cualquier asistente que pueda leer un archivo de instrucciones
-del repositorio.
+A **work harness for AI agents** that structures the
+*research → implement → review* cycle in a repository. Stack-agnostic
+(it assumes no particular language or framework) and **agent-agnostic**:
+it works with Claude Code, OpenAI Codex CLI, OpenCode, Cursor, Aider and, in
+general, any assistant that can read an instructions file
+from the repository.
 
-La idea es simple: cuando un agente entra en el repo, ya sabe dónde mirar,
-qué reglas aplican y cómo cerrar el trabajo sin dejar el árbol sucio. El
-arnés es **documentación con forma de directorio** + **scripts de
-verificación** + **plantillas de subagentes**.
-
----
-
-## ¿Por qué?
-
-Trabajar con un agente sin estructura suele acabar en:
-
-- Cambios inconsistentes (cada sesión inventa su propio estilo).
-- Tareas marcadas como "done" sin pruebas verdes.
-- Contexto perdido entre sesiones — la siguiente arranca de cero.
-- Mocks que ocultan que el cambio rompe producción.
-- Revisión sin criterio: "esto se ve bien" en vez de "cumple los checkpoints".
-
-El arnés ataca cada una de esas causas con una regla escrita y una
-expectativa concreta:
-
-- `AGENTS.md` es el mapa: cualquier agente lo lee primero.
-- `harness/docs/architecture.md` define qué es "buen código" en este proyecto.
-- `harness/docs/conventions.md` define cómo se escribe.
-- `harness/docs/verification.md` define cómo se demuestra que funciona.
-- `harness/CHECKPOINTS.md` define cuándo se aprueba un cambio.
-- `harness/feature_list.json` / `harness/hotfix_list.json` son la cola de
-  trabajo, con un lifecycle único (`pending → in_progress → done`).
-- `harness/progress/current.md` lleva la sesión en vivo;
-  `harness/progress/history.md` es la bitácora append-only.
-- `agents/` son las definiciones de los subagentes (leader,
-  researcher, implementer, reviewer) con sus protocolos.
-- `harness/init.sh` es el guardián: valida estado del arnés y delega los
-  chequeos específicos del stack a `./scripts/check.sh`.
-
-> **Organización del repo.** Para no inundar la raíz del proyecto, casi todo
-> el arnés vive bajo `harness/`. Solo se quedan en la raíz `CLAUDE.md` y
-> `AGENTS.md` (los *entry files* que los agentes leen automáticamente; no
-> funcionarían anidados) y la carpeta `agents/` (para copiarla a
-> `.claude/agents/`). `src/` y `tests/` son del proyecto, no del arnés.
+The idea is simple: when an agent enters the repo, it already knows where to look,
+which rules apply, and how to close out the work without leaving the tree dirty. The
+harness is **documentation shaped like a directory** + **verification
+scripts** + **subagent templates**.
 
 ---
 
-## Estructura
+## Why?
+
+Working with an agent without structure usually ends in:
+
+- Inconsistent changes (each session invents its own style).
+- Tasks marked as "done" without green tests.
+- Context lost between sessions — the next one starts from scratch.
+- Mocks that hide the fact the change breaks production.
+- Review without criteria: "this looks good" instead of "it meets the checkpoints".
+
+The harness attacks each of those causes with a written rule and a
+concrete expectation:
+
+- `AGENTS.md` is the map: every agent reads it first.
+- `harness/docs/architecture.md` defines what "good code" is in this project.
+- `harness/docs/conventions.md` defines how it is written.
+- `harness/docs/verification.md` defines how you prove it works.
+- `harness/CHECKPOINTS.md` defines when a change is approved.
+- `harness/feature_list.json` / `harness/hotfix_list.json` are the work
+  queue, with a single lifecycle (`pending → in_progress → done`).
+- `harness/progress/current.md` keeps the live session;
+  `harness/progress/history.md` is the append-only log.
+- `agents/` are the subagent definitions (leader,
+  researcher, implementer, reviewer) with their protocols.
+- `harness/init.sh` is the gatekeeper: it validates the harness state and delegates the
+  stack-specific checks to `./scripts/check.sh`.
+
+> **Repo organization.** To avoid flooding the project root, almost all
+> of the harness lives under `harness/`. Only `CLAUDE.md` and
+> `AGENTS.md` stay in the root (the *entry files* that agents read
+> automatically; they wouldn't work nested) and the `agents/` folder (to copy it to
+> `.claude/agents/`). `src/` and `tests/` belong to the project, not the harness.
+
+---
+
+## Structure
 
 ```
 .
-├── CLAUDE.md                     # Entry para Claude Code. Asigna el rol de leader.
-├── AGENTS.md                     # Mapa del repositorio. Entry para Codex / OpenCode / Aider / etc.
+├── CLAUDE.md                     # Entry for Claude Code. Assigns the leader role.
+├── AGENTS.md                     # Repository map. Entry for Codex / OpenCode / Aider / etc.
 ├── agents/
-│   ├── leader.md                 # Orquestador. No escribe código.
-│   ├── researcher.md             # Produce el plan.
-│   ├── implementer.md            # Ejecuta el plan + escribe tests.
-│   └── reviewer.md               # Aprueba o rechaza.
+│   ├── leader.md                 # Orchestrator. Does not write code.
+│   ├── researcher.md             # Produces the plan.
+│   ├── implementer.md            # Executes the plan + writes tests.
+│   └── reviewer.md               # Approves or rejects.
 └── harness/
-    ├── README.md                 # Este archivo.
-    ├── CHECKPOINTS.md            # Lista de criterios objetivos de aprobación.
-    ├── init.sh                   # Verificación del entorno. Correr `./harness/init.sh` desde la raíz.
-    ├── feature_list.json         # Cola de features (pending / in_progress / done / blocked).
-    ├── hotfix_list.json          # Cola de hotfixes.
+    ├── README.md                 # This file.
+    ├── CHECKPOINTS.md            # List of objective approval criteria.
+    ├── init.sh                   # Environment verification. Run `./harness/init.sh` from the root.
+    ├── feature_list.json         # Feature queue (pending / in_progress / done / blocked).
+    ├── hotfix_list.json          # Hotfix queue.
     ├── docs/
-    │   ├── architecture.md       # Decisiones arquitectónicas. Estándar de calidad.
-    │   ├── conventions.md        # Estilo de código, nombres, estructura.
-    │   └── verification.md       # Política de tests y mocking.
+    │   ├── architecture.md       # Architectural decisions. Quality standard.
+    │   ├── conventions.md        # Code style, naming, structure.
+    │   └── verification.md       # Test and mocking policy.
     └── progress/
-        ├── current.md            # Estado de la sesión actual. Se vacía al cerrar.
-        └── history.md            # Bitácora append-only.
+        ├── current.md            # State of the current session. Emptied on close.
+        └── history.md            # Append-only log.
 ```
 
-Cuando el arnés está vivo, en `harness/progress/` también aparecen archivos
-temporales y persistentes:
+When the harness is live, temporary and persistent files also appear in
+`harness/progress/`:
 
 ```
 harness/progress/
-├── feat_<id>/                # Carpeta temporal de una feature en curso.
-│   ├── plan_<id>.md          # Plan del researcher. Se borra al cerrar.
-│   └── review_<id>.md        # Veredicto del reviewer. Se borra al cerrar.
-├── hotfix_<id>/              # Igual, para hotfixes.
-├── researcher_<slug>.md      # Resumen histórico por tarea cerrada.
-├── implementer_<slug>.md     # Resumen histórico por tarea cerrada.
-└── reviewer_<slug>.md        # Resumen histórico por tarea cerrada.
+├── feat_<id>/                # Temporary folder for a feature in progress.
+│   ├── plan_<id>.md          # Researcher's plan. Deleted on close.
+│   └── review_<id>.md        # Reviewer's verdict. Deleted on close.
+├── hotfix_<id>/              # Same, for hotfixes.
+├── researcher_<slug>.md      # Historical summary per closed task.
+├── implementer_<slug>.md     # Historical summary per closed task.
+└── reviewer_<slug>.md        # Historical summary per closed task.
 ```
 
 ---
 
-## Lifecycle de una tarea
+## Task lifecycle
 
 ```
    harness/feature_list.json (status: pending)
             │
             ▼
    ┌─────────────────────────────────────────────┐
-   │ 1. leader corre ./harness/init.sh (principio)│
-   │ 2. leader pregunta: ¿feature o hotfix?       │
-   │ 3. leader elige tarea pending de menor id    │
-   │ 4. leader lanza researcher                   │
+   │ 1. leader runs ./harness/init.sh (start)     │
+   │ 2. leader asks: feature or hotfix?           │
+   │ 3. leader picks pending task with lowest id  │
+   │ 4. leader launches researcher                │
    └─────────────────────────────────────────────┘
             │
             ▼
    researcher
-   ─ marca tarea in_progress
-   ─ explora código, evalúa enfoques (SOLID/KISS/DRY)
-   ─ escribe harness/progress/feat_<id>/plan_<id>.md
+   ─ marks task in_progress
+   ─ explores code, evaluates approaches (SOLID/KISS/DRY)
+   ─ writes harness/progress/feat_<id>/plan_<id>.md
             │
             ▼
-   ⏸ VALIDACIÓN DEL USUARIO
-   ─ el leader presenta el plan al usuario
-   ─ no se avanza sin su OK explícito
-   ─ si pide cambios → vuelve al researcher
+   ⏸ USER VALIDATION
+   ─ the leader presents the plan to the user
+   ─ no progress without their explicit OK
+   ─ if they request changes → back to the researcher
             │
             ▼
    implementer
-   ─ lee el plan (ya validado)
-   ─ implementa + escribe tests
-   ─ NO ejecuta tests ni init.sh (la verificación la hace el reviewer)
+   ─ reads the plan (already validated)
+   ─ implements + writes tests
+   ─ does NOT run tests or init.sh (verification is done by the reviewer)
             │
             ▼
    reviewer
-   ─ recorre harness/CHECKPOINTS.md
-   ─ ejecuta ./harness/init.sh (verificación "del final", puerta única)
-   ─ veredicto → harness/progress/feat_<id>/review_<id>.md
+   ─ walks through harness/CHECKPOINTS.md
+   ─ runs ./harness/init.sh (the "at the end" verification, single gate)
+   ─ verdict → harness/progress/feat_<id>/review_<id>.md
             │
        ┌────┴─────┐
        ▼          ▼
  CHANGES_REQ   APPROVED
        │          │
        │          ▼
-       │   implementer cierra (SIN re-correr init.sh):
-       │   ─ status: "done" en harness/feature_list.json
-       │   ─ escribe researcher_<slug>.md,
+       │   implementer closes (WITHOUT re-running init.sh):
+       │   ─ status: "done" in harness/feature_list.json
+       │   ─ writes researcher_<slug>.md,
        │     implementer_<slug>.md, reviewer_<slug>.md
-       │   ─ mueve current.md → history.md
+       │   ─ moves current.md → history.md
        │   ─ rm -rf harness/progress/feat_<id>/
        │
-       └─→ vuelve a implementer
+       └─→ back to implementer
 ```
 
-Reglas duras del lifecycle:
+Hard rules of the lifecycle:
 
-- **Una sola tarea `in_progress` a la vez.** `harness/init.sh` falla si hay más.
-- **El plan del researcher no se ejecuta sin validación explícita del usuario.**
-- **No se marca `done` sin `APPROVED` del reviewer** (que implica
-  `./harness/init.sh` verde).
-- **`./harness/init.sh` lo corren solo el leader (al principio) y el reviewer
-  (verificación, incluye los tests).** El implementer no ejecuta tests ni
-  `init.sh`, y no lo repite al cerrar: se fía del `APPROVED`.
-- **`harness/progress/current.md` se actualiza en vivo**, no al final.
-- **Los artefactos temporales (`feat_<id>/`, `hotfix_<id>/`) se borran al
-  cerrar la tarea.** Los resúmenes históricos (`<rol>_<slug>.md`) se quedan.
+- **Only one `in_progress` task at a time.** `harness/init.sh` fails if there are more.
+- **The researcher's plan is not executed without explicit user validation.**
+- **A task is not marked `done` without `APPROVED` from the reviewer** (which implies
+  `./harness/init.sh` green).
+- **`./harness/init.sh` is run only by the leader (at the start) and the reviewer
+  (verification, includes the tests).** The implementer does not run tests or
+  `init.sh`, and does not repeat it on close: it trusts the `APPROVED`.
+- **`harness/progress/current.md` is updated live**, not at the end.
+- **Temporary artifacts (`feat_<id>/`, `hotfix_<id>/`) are deleted when
+  the task closes.** The historical summaries (`<role>_<slug>.md`) stay.
 
 ---
 
-## Cómo adoptarlo en un proyecto nuevo
+## How to adopt it in a new project
 
-1. **Copia el contenido del arnés a la raíz del proyecto.** Conserva el
-   layout: `CLAUDE.md`, `AGENTS.md` y `agents/` quedan en la raíz, y todo
-   lo demás bajo `harness/`:
+1. **Copy the harness contents to the project root.** Keep the
+   layout: `CLAUDE.md`, `AGENTS.md` and `agents/` stay in the root, and everything
+   else under `harness/`:
 
    ```bash
-   # Desde el proyecto destino:
-   cp -r /ruta/a/compi-harness/. ./
+   # From the target project:
+   cp -r /path/to/compi-harness/. ./
    ```
 
-   No copies el `.git/` del arnés si lo hubiera; sus archivos van como
-   ficheros normales del proyecto.
+   Do not copy the harness's `.git/` if it has one; its files go in as
+   normal project files.
 
-2. **Rellena las plantillas con la realidad de tu stack:**
+2. **Fill the templates with the reality of your stack:**
 
-   - `harness/docs/architecture.md` — qué significa "buen código" aquí.
-   - `harness/docs/conventions.md` — estilo, nombres, errores, logging.
-   - `harness/docs/verification.md` — política de tests y mocking.
-   - `harness/CHECKPOINTS.md` — añade los checkpoints específicos del proyecto.
-   - `harness/feature_list.json` / `harness/hotfix_list.json` — pon el nombre
-     del proyecto y la primera tarea pendiente.
-   - `harness/progress/history.md` — borra la entrada de ejemplo.
+   - `harness/docs/architecture.md` — what "good code" means here.
+   - `harness/docs/conventions.md` — style, naming, errors, logging.
+   - `harness/docs/verification.md` — test and mocking policy.
+   - `harness/CHECKPOINTS.md` — add the project-specific checkpoints.
+   - `harness/feature_list.json` / `harness/hotfix_list.json` — put the project
+     name and the first pending task.
+   - `harness/progress/history.md` — delete the example entry.
 
-3. **Crea `scripts/check.sh`** (en la raíz del proyecto) con los chequeos
-   reales del stack (lint, typecheck, test, build). `harness/init.sh` lo
-   invoca automáticamente si existe. Ejemplos:
+3. **Create `scripts/check.sh`** (in the project root) with the real
+   stack checks (lint, typecheck, test, build). `harness/init.sh`
+   invokes it automatically if it exists. Examples:
 
    ```bash
    # scripts/check.sh — Node
@@ -211,216 +211,216 @@ Reglas duras del lifecycle:
    go build ./...
    ```
 
-4. **Ejecuta `./harness/init.sh`** y arregla todo lo que salga rojo antes de
-   empezar a meter tareas.
+4. **Run `./harness/init.sh`** and fix everything that comes back red before
+   you start adding tasks.
 
-5. **Si usas Claude Code y quieres descubrimiento nativo de subagentes**,
-   copia las plantillas a `.claude/agents/`:
+5. **If you use Claude Code and want native subagent discovery**,
+   copy the templates to `.claude/agents/`:
 
    ```bash
    mkdir -p .claude/agents && cp agents/*.md .claude/agents/
    ```
 
-   Para Codex CLI, OpenCode, Aider y otros no hace falta — leen `agents/`
-   como Markdown normal cuando el `leader` los referencia.
+   For Codex CLI, OpenCode, Aider and others it's not needed — they read `agents/`
+   as plain Markdown when the `leader` references them.
 
-6. **Arranca tu agente** en el directorio y dale el primer prompt. El
-   agente leerá su entry file (`CLAUDE.md` o `AGENTS.md`), asumirá el rol
-   de `leader`, te preguntará si es feature o hotfix, y arrancará el
-   flujo. Un buen primer prompt:
+6. **Start your agent** in the directory and give it the first prompt. The
+   agent will read its entry file (`CLAUDE.md` or `AGENTS.md`), assume the role
+   of `leader`, ask you whether it's a feature or hotfix, and start the
+   flow. A good first prompt:
 
-   > "Tengo una feature nueva: <descripción breve>. Añádela a
-   > `harness/feature_list.json` y empezamos."
+   > "I have a new feature: <short description>. Add it to
+   > `harness/feature_list.json` and let's begin."
 
 ---
 
-## Setup guiado por agente
+## Agent-guided setup
 
-Si no quieres rellenar las plantillas (`harness/docs/*.md`,
-`harness/CHECKPOINTS.md`, `scripts/check.sh`, las listas) a mano, copia este
-prompt y pégalo al agente justo después de copiar el arnés al proyecto. El
-agente te irá preguntando por bloques y dejará todo configurado, terminando
-con un `./harness/init.sh` verde.
+If you don't want to fill the templates (`harness/docs/*.md`,
+`harness/CHECKPOINTS.md`, `scripts/check.sh`, the lists) by hand, copy this
+prompt and paste it to the agent right after copying the harness into the project. The
+agent will ask you block by block and leave everything configured, finishing
+with a green `./harness/init.sh`.
 
 ```text
-Eres el setup wizard de este arnés (compi-harness). Esta es una sesión
-de CONFIGURACIÓN única, no de trabajo: NO actúes como leader, NO
-preguntes "¿feature o hotfix?", NO toques `src/` ni `tests/`.
+You are the setup wizard for this harness (compi-harness). This is a one-time
+CONFIGURATION session, not a work session: do NOT act as leader, do NOT
+ask "feature or hotfix?", do NOT touch `src/` or `tests/`.
 
-Tu tarea: rellenar las plantillas del arnés haciéndome preguntas por
-bloques. Reglas:
+Your task: fill the harness templates by asking me questions block by
+block. Rules:
 
-- UN bloque a la vez. Pregunta, espera respuesta, escribe el(los)
-  fichero(s) de ese bloque, y solo entonces pasa al siguiente.
-- Si respondo "no sé" o "no aplica", déjalo como "N/A" o borra la
-  sección, pero NO inventes.
-- Si una respuesta es ambigua, repregunta antes de escribir.
-- Ficheros permitidos para tocar: `harness/feature_list.json`,
+- ONE block at a time. Ask, wait for the answer, write the
+  file(s) for that block, and only then move on to the next.
+- If I answer "I don't know" or "not applicable", leave it as "N/A" or delete the
+  section, but do NOT make things up.
+- If an answer is ambiguous, ask again before writing.
+- Files allowed to touch: `harness/feature_list.json`,
   `harness/hotfix_list.json`, `harness/docs/architecture.md`,
   `harness/docs/conventions.md`, `harness/docs/verification.md`,
-  `harness/CHECKPOINTS.md`, `scripts/check.sh`, y opcionalmente
-  `.claude/agents/*.md`. Cualquier otro fichero está fuera de alcance.
-- No reescribas un fichero entero si solo cambia una sección: edita
-  esa sección.
+  `harness/CHECKPOINTS.md`, `scripts/check.sh`, and optionally
+  `.claude/agents/*.md`. Any other file is out of scope.
+- Don't rewrite a whole file if only one section changes: edit
+  that section.
 
 ---
 
-**Bloque 1 — Identidad**
-- Nombre del proyecto (slug corto, sin espacios).
-- Descripción en 1-2 frases: qué hace, para quién, qué problema resuelve.
+**Block 1 — Identity**
+- Project name (short slug, no spaces).
+- Description in 1-2 sentences: what it does, for whom, what problem it solves.
 
-→ Escribe el campo `project` en `harness/feature_list.json` y
-  `harness/hotfix_list.json`. Rellena la sección "Contexto" de
+→ Write the `project` field in `harness/feature_list.json` and
+  `harness/hotfix_list.json`. Fill the "Context" section of
   `harness/docs/architecture.md`.
 
-**Bloque 2 — Stack y toolchain**
-- Lenguaje + versión (p. ej. TypeScript 5.x, Python 3.12, Go 1.22).
+**Block 2 — Stack and toolchain**
+- Language + version (e.g. TypeScript 5.x, Python 3.12, Go 1.22).
 - Runtime/target (Node 20 LTS, CPython 3.12, JVM 21…).
-- Frameworks y librerías relevantes (HTTP, DB, ORM, validación…).
-- Comandos exactos para: lint, typecheck (si aplica), tests, build.
+- Relevant frameworks and libraries (HTTP, DB, ORM, validation…).
+- Exact commands for: lint, typecheck (if applicable), tests, build.
 
-→ Crea `scripts/check.sh` con `set -e` y los comandos en orden
-  (lint → typecheck → test → build). Hazlo ejecutable (`chmod +x`).
-  Rellena "Estilo del lenguaje" en `harness/docs/conventions.md`.
+→ Create `scripts/check.sh` with `set -e` and the commands in order
+  (lint → typecheck → test → build). Make it executable (`chmod +x`).
+  Fill "Language style" in `harness/docs/conventions.md`.
 
-**Bloque 3 — Convenciones**
-- Nombres (ficheros, tipos/clases, funciones, constantes, privadas, enums).
-- Sufijos por rol, si aplica (p. ej. `*.service.ts`, `*.controller.ts`).
-- Estructura típica de un módulo/dominio (carpetas + ejemplo).
-- Validación de entradas externas (librería + dónde).
-- Inyección de dependencias.
-- Manejo de errores (excepciones / Result / exit codes; dónde se definen).
-- Logger oficial y qué queda prohibido (`console.log`, `print`, …).
-- Asincronía: patrones que sí / patrones que no.
+**Block 3 — Conventions**
+- Naming (files, types/classes, functions, constants, private, enums).
+- Suffixes by role, if applicable (e.g. `*.service.ts`, `*.controller.ts`).
+- Typical structure of a module/domain (folders + example).
+- Validation of external inputs (library + where).
+- Dependency injection.
+- Error handling (exceptions / Result / exit codes; where they are defined).
+- Official logger and what is forbidden (`console.log`, `print`, …).
+- Asynchrony: patterns that are OK / patterns that are not.
 
-→ Rellena `harness/docs/conventions.md`. Borra las secciones que no apliquen.
+→ Fill `harness/docs/conventions.md`. Delete the sections that don't apply.
 
-**Bloque 4 — Arquitectura**
-- 3-5 principios no negociables (qué + por qué).
-- Flujo de datos típico (descríbelo en prosa; tú lo conviertes a ASCII).
-- 3-5 anti-patrones concretos ("no se hace X porque Y").
+**Block 4 — Architecture**
+- 3-5 non-negotiable principles (what + why).
+- Typical data flow (describe it in prose; you convert it to ASCII).
+- 3-5 concrete anti-patterns ("don't do X because Y").
 
-→ Rellena `harness/docs/architecture.md`.
+→ Fill `harness/docs/architecture.md`.
 
-**Bloque 5 — Verificación**
-- Framework de tests.
-- Política de mocking: qué se mockea siempre, qué no se mockea nunca, y por qué.
-- Comando para tests unitarios.
-- ¿Hay E2E / integración? Si sí: comando + qué dependencias reales se usan.
-- ¿Hay smoke manual? Si sí, cómo se arranca dev.
+**Block 5 — Verification**
+- Test framework.
+- Mocking policy: what is always mocked, what is never mocked, and why.
+- Command for unit tests.
+- Is there E2E / integration? If so: command + which real dependencies are used.
+- Is there a manual smoke test? If so, how dev is started.
 
-→ Rellena `harness/docs/verification.md`.
+→ Fill `harness/docs/verification.md`.
 
-**Bloque 6 — Checkpoints específicos**
-Listame 3-7 checkpoints objetivos más allá de los genéricos C1-C7. Cada
-uno verificable sin opinar (mal: "código limpio"; bien: "ningún
-controller devuelve entidades de Prisma directamente").
+**Block 6 — Specific checkpoints**
+List me 3-7 objective checkpoints beyond the generic C1-C7. Each
+one verifiable without opining (bad: "clean code"; good: "no
+controller returns Prisma entities directly").
 
-→ Añádelos como C8, C9, … en `harness/CHECKPOINTS.md` y borra los ejemplos
-  placeholder.
+→ Add them as C8, C9, … in `harness/CHECKPOINTS.md` and delete the
+  placeholder examples.
 
-**Bloque 7 — Primera tarea (opcional)**
-¿Añado una primera entrada en `harness/feature_list.json` o
+**Block 7 — First task (optional)**
+Should I add a first entry in `harness/feature_list.json` or
 `harness/hotfix_list.json`?
-Si sí: tipo, id, título, descripción de 1-2 frases, y criterios de
-aceptación en bullets. Si no, sáltalo.
+If so: type, id, title, 1-2 sentence description, and acceptance
+criteria in bullets. If not, skip it.
 
-**Bloque 8 — Subagentes de Claude Code (opcional)**
-¿Vas a trabajar con Claude Code y quieres `.claude/agents/` poblado para
-descubrimiento nativo? (Sí/No)
+**Block 8 — Claude Code subagents (optional)**
+Are you going to work with Claude Code and want `.claude/agents/` populated for
+native discovery? (Yes/No)
 
-→ Si sí: `mkdir -p .claude/agents && cp agents/*.md .claude/agents/`.
+→ If yes: `mkdir -p .claude/agents && cp agents/*.md .claude/agents/`.
 
 ---
 
-**Cierre**
-1. Ejecuta `./harness/init.sh`.
-2. Si está en verde, dime que el arnés está listo y cuál es el primer
-   paso recomendado (lanzar al leader con la primera tarea, o pedirme
-   una si nos saltamos el bloque 7).
-3. Si está en rojo, listame cada `[FAIL]`, explica qué falta, y
-   pregúntame antes de tocar nada. NO improvises arreglos.
+**Closing**
+1. Run `./harness/init.sh`.
+2. If it's green, tell me the harness is ready and what the first
+   recommended step is (launch the leader with the first task, or ask me
+   for one if we skipped block 7).
+3. If it's red, list me each `[FAIL]`, explain what's missing, and
+   ask me before touching anything. Do NOT improvise fixes.
 
-Empieza ahora por el Bloque 1.
+Start now with Block 1.
 ```
 
-Cuando termine, lo único que queda por hacer es lanzar al agente con
-una tarea real (paso 6 de la sección anterior).
+When it finishes, the only thing left to do is launch the agent with
+a real task (step 6 of the previous section).
 
 ---
 
-## Compatibilidad con agentes de IA
+## Compatibility with AI agents
 
-El arnés no depende de ningún agente concreto. Lo que cambia entre uno y
-otro es **qué archivo lee primero** al entrar al repo. Por eso enviamos
-dos entry files con instrucciones equivalentes:
+The harness does not depend on any particular agent. What changes between one and
+another is **which file it reads first** when entering the repo. That's why we ship
+two entry files with equivalent instructions:
 
-- `CLAUDE.md` — entry de Claude Code.
-- `AGENTS.md` — entry estándar (Codex CLI, OpenCode, Aider y otros lo
-  leen automáticamente; es la convención de [agents.md](https://agents.md)).
+- `CLAUDE.md` — entry for Claude Code.
+- `AGENTS.md` — standard entry (Codex CLI, OpenCode, Aider and others read it
+  automatically; it's the [agents.md](https://agents.md) convention).
 
-Tabla de compatibilidad:
+Compatibility table:
 
-| Agente                | Entry file que lee                    | Funciona out-of-the-box |
+| Agent                 | Entry file it reads                   | Works out-of-the-box    |
 |-----------------------|---------------------------------------|-------------------------|
-| Claude Code           | `CLAUDE.md`                           | Sí                      |
-| OpenAI Codex CLI      | `AGENTS.md`                           | Sí                      |
-| OpenCode (sst)        | `AGENTS.md`                           | Sí                      |
-| Aider                 | `AGENTS.md` (también lee `CONVENTIONS.md`) | Sí                 |
-| Cursor                | `.cursor/rules` o `.cursorrules`      | Requiere puente (ver abajo) |
-| GitHub Copilot Chat   | `.github/copilot-instructions.md`     | Requiere puente         |
-| Otros                 | Apuntar manualmente a `AGENTS.md`     | Sí, con un paso         |
+| Claude Code           | `CLAUDE.md`                           | Yes                     |
+| OpenAI Codex CLI      | `AGENTS.md`                           | Yes                     |
+| OpenCode (sst)        | `AGENTS.md`                           | Yes                     |
+| Aider                 | `AGENTS.md` (also reads `CONVENTIONS.md`) | Yes                 |
+| Cursor                | `.cursor/rules` or `.cursorrules`     | Requires a bridge (see below) |
+| GitHub Copilot Chat   | `.github/copilot-instructions.md`     | Requires a bridge       |
+| Others                | Point manually to `AGENTS.md`         | Yes, with one step      |
 
-**Para agentes que no leen `CLAUDE.md` ni `AGENTS.md` directamente** (Cursor,
-Copilot, ...), crea su archivo de configuración con una línea que apunte
-al entry estándar:
+**For agents that don't read `CLAUDE.md` or `AGENTS.md` directly** (Cursor,
+Copilot, ...), create their config file with a line pointing
+to the standard entry:
 
 ```
-# Ejemplo: .cursorrules o .github/copilot-instructions.md
-Lee AGENTS.md como punto de entrada. Sigue el protocolo de agents/leader.md.
+# Example: .cursorrules or .github/copilot-instructions.md
+Read AGENTS.md as the entry point. Follow the protocol in agents/leader.md.
 ```
 
-**Los subagentes (`agents/leader.md`, `researcher.md`, `implementer.md`,
-`reviewer.md`) están escritos como Markdown plano con frontmatter YAML.**
-Claude Code los descubre nativamente si los copias a `.claude/agents/` al
-adoptar el arnés. Otros agentes que no soporten "subagentes" pueden
-**leerlos como roles** que el modelo asume secuencialmente en la misma
-sesión — el flujo `researcher → implementer → reviewer` funciona igual,
-solo cambia el motor.
+**The subagents (`agents/leader.md`, `researcher.md`, `implementer.md`,
+`reviewer.md`) are written as plain Markdown with YAML frontmatter.**
+Claude Code discovers them natively if you copy them to `.claude/agents/` when
+adopting the harness. Other agents that don't support "subagents" can
+**read them as roles** that the model assumes sequentially in the same
+session — the `researcher → implementer → reviewer` flow works the same,
+only the engine changes.
 
-## Requisitos
+## Requirements
 
 - **Bash 4+** (macOS / Linux).
-- **`python3`** disponible en `PATH` para que `init.sh` valide los JSON.
-  Si no está, la validación se omite con un WARN; el resto del script
-  sigue funcionando.
-- Un **agente de IA** capaz de leer el repo (ver tabla de compatibilidad
-  arriba). El arnés no requiere ninguno en particular.
-- Lo que tu stack necesite. El arnés no impone toolchain.
+- **`python3`** available on `PATH` so that `init.sh` can validate the JSON.
+  If it's not there, validation is skipped with a WARN; the rest of the script
+  keeps working.
+- An **AI agent** capable of reading the repo (see the compatibility table
+  above). The harness doesn't require any in particular.
+- Whatever your stack needs. The harness imposes no toolchain.
 
 ---
 
-## Filosofía
+## Philosophy
 
-Este arnés está pensado para minimizar dos clases de fallo:
+This harness is designed to minimize two classes of failure:
 
-1. **Drift entre sesiones.** Un agente nuevo lee `AGENTS.md` y en 5 minutos
-   sabe lo mismo que el que cerró la sesión anterior. No depende de memoria
-   ni de chat previo.
+1. **Drift between sessions.** A new agent reads `AGENTS.md` and in 5 minutes
+   knows the same as the one that closed the previous session. It doesn't depend on memory
+   or prior chat.
 
-2. **"Lo dejé hecho" sin evidencia.** No se cierra una tarea sin tests
-   verdes, sin pasar checkpoints, y sin que un agente reviewer distinto
-   del implementer haya dado el OK.
+2. **"I left it done" without evidence.** A task is not closed without green tests,
+   without passing checkpoints, and without a reviewer agent different
+   from the implementer having given the OK.
 
-No es un framework de testing, ni un linter, ni un sistema de tickets
-remoto. Es una **convención** que vive en el repo y que cualquiera (humano
-o agente) puede seguir leyendo los archivos en el orden que indica
+It's not a testing framework, nor a linter, nor a remote ticketing
+system. It's a **convention** that lives in the repo and that anyone (human
+or agent) can follow by reading the files in the order indicated by
 `AGENTS.md`.
 
 ---
 
-## Licencia
+## License
 
-Mira el archivo `LICENSE` si está presente. Si no, el arnés se publica
-como código de plantilla libre de derechos — cópialo, modifícalo y úsalo
-en lo que quieras.
+See the `LICENSE` file if present. If not, the harness is published
+as royalty-free template code — copy it, modify it, and use it
+in whatever you want.

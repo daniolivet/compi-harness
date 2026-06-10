@@ -1,6 +1,6 @@
 {
-  "project": "<nombre-del-proyecto>",
-  "description": "Lista de hotfixes (bugs en producción o regresiones críticas). Mismo lifecycle que feature_list.json: una tarea a la vez, no se cierra sin tests verdes.",
+  "project": "<project-name>",
+  "description": "List of hotfixes (production bugs or critical regressions). Same lifecycle as feature_list.json: one task at a time, not closed without green tests.",
   "rules": {
     "one_feature_at_a_time": true,
     "require_tests_to_close": true,

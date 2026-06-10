@@ -1,6 +1,6 @@
 {
-  "project": "<nombre-del-proyecto>",
-  "description": "Lista de features pendientes. Una tarea a la vez, no se cierra sin tests verdes.",
+  "project": "<project-name>",
+  "description": "List of pending features. One task at a time, not closed without green tests.",
   "rules": {
     "one_feature_at_a_time": true,
     "require_tests_to_close": true,

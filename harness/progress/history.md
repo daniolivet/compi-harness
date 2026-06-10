@@ -1,11 +1,11 @@
-# Bitácora histórica (append-only)
+# Historical log (append-only)
 
-> Cada vez que se cierra una sesión, su resumen se añade aquí.
-> No edites entradas anteriores. Solo añades al final.
+> Every time a session closes, its summary is appended here.
+> Do not edit previous entries. You only append at the end.
 
 ---
 
-## YYYY-MM-DD — Inicio del proyecto (ejemplo, bórralo al adoptar)
-- **Agente:** implementer
-- **Cambios:** estructura inicial del arnés (AGENTS.md, feature_list.json, hotfix_list.json, docs/).
-- **Resultado:** entorno listo.
+## YYYY-MM-DD — Project start (example, delete it when adopting)
+- **Agent:** implementer
+- **Changes:** initial harness structure (AGENTS.md, feature_list.json, hotfix_list.json, docs/).
+- **Result:** environment ready.
