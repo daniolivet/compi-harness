@@ -1,0 +1,31 @@
+{
+  "name": "compi-harness",
+  "version": "0.1.0",
+  "description": "CLI que instala y configura el arnés compi-harness en un repositorio, adaptado a tu IA de código.",
+  "type": "module",
+  "bin": {
+    "compi-harness": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "templates"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "start": "node dist/cli.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@clack/prompts": "^0.7.0",
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "tsup": "^8.1.0",
+    "typescript": "^5.4.5"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "project": "<project-name>",
+  "description": "List of hotfixes (production bugs or critical regressions). Same lifecycle as feature_list.json: one task at a time, not closed without green tests.",
+  "rules": {
+    "one_feature_at_a_time": true,
+    "require_tests_to_close": true,
+    "valid_status": ["pending", "in_progress", "done", "blocked"]
+  },
+  "hotfixes": []
+}
