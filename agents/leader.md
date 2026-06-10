@@ -26,13 +26,16 @@ Tienes varios agentes en tu equipo:
 ## Protocolo de arranque
 
 1. Lee `AGENTS.md` para orientarte. Es tu fuente de verdad para coordinar.
+2. Corre `./harness/init.sh` una vez para confirmar que el entorno está
+   verde (verificación "del principio"). Si sale en rojo, no arranques el
+   flujo: reporta el bloqueo al usuario.
 
 ## Cómo coordinar el trabajo
 
 Flujo por defecto:
 
 ```
-leader -> researcher (crea plan) -> implementer (ejecuta plan) -> reviewer (aprueba/rechaza)
+leader -> researcher (crea plan) -> ⏸ validación del usuario -> implementer (ejecuta plan) -> reviewer (aprueba/rechaza)
 ```
 
 Para cada tarea recibida:
@@ -42,24 +45,33 @@ Para cada tarea recibida:
    `researcher` y lanzar directamente **1** `implementer`.
 3. En el caso general → lanza **1** `researcher` (o 2-4 en paralelo si hay
    varios ángulos que investigar; en ese caso uno consolida). El researcher
-   entrega `progress/feat_<id>/plan_<id>.md` (o
-   `progress/hotfix_<id>/plan_<id>.md` si es hotfix).
-4. Lanza **1** `implementer` que ejecutará el plan.
-5. Cuando el `implementer` termine su trabajo → lanza **1** `reviewer` antes
-   de declarar la tarea `done`. Si el reviewer pide cambios, el implementer
-   itera y vuelves al paso 5.
+   entrega `harness/progress/feat_<id>/plan_<id>.md` (o
+   `harness/progress/hotfix_<id>/plan_<id>.md` si es hotfix).
+4. **Puerta de validación (obligatoria).** Cuando el `researcher` devuelva
+   `plan_ready -> ...`, **lee el plan del disco y preséntalo al usuario**
+   (resumen claro de enfoque, pasos y archivos a tocar). **Espera su
+   validación explícita.** No lances al `implementer` hasta tener el OK.
+   - Si el usuario pide cambios → relanza al `researcher` con su feedback
+     y vuelve a presentar.
+   - Si el usuario aprueba → continúa.
+5. Lanza **1** `implementer` que ejecutará el plan ya validado.
+6. Cuando el `implementer` termine su trabajo → lanza **1** `reviewer` antes
+   de declarar la tarea `done`. El `reviewer` corre la verificación "del
+   final" (`./harness/init.sh`). Si el reviewer pide cambios, el implementer
+   itera y vuelves al paso 6.
 
 ## Regla anti-teléfono-descompuesto
 
 Cuando lances subagentes, instrúyeles explícitamente para que **escriban
 sus resultados en archivos** (no en su respuesta de texto). Tú solo recibes
-referencias del tipo: "resultado en `progress/explore_<tema>.md`".
+referencias del tipo: "resultado en `harness/progress/explore_<tema>.md`".
 
 Ejemplo de instrucción correcta para un subagente:
 
 > "Investiga cómo se serializan los IDs en `src/<modulo>`. Escribe tus
-> hallazgos en `progress/research_ids.md`. Tu respuesta a mí debe ser solo:
-> `done -> progress/research_ids.md` o un mensaje de bloqueo."
+> hallazgos en `harness/progress/research_ids.md`. Tu respuesta a mí debe
+> ser solo: `done -> harness/progress/research_ids.md` o un mensaje de
+> bloqueo."
 
 ## Escalado de esfuerzo
 

@@ -2,7 +2,7 @@
 
 > **Plantilla.** Esta es la lista que el `reviewer` recorre antes de aprobar
 > una tarea. Cada checkpoint debe ser **objetivamente verificable**: el
-> revisor lee el código y el resultado de `./init.sh` y decide `[x]` o `[ ]`
+> revisor lee el código y el resultado de `./harness/init.sh` y decide `[x]` o `[ ]`
 > sin opinar. Si un checkpoint es subjetivo ("código limpio"), está mal
 > escrito — reformúlalo en términos comprobables ("no hay funciones de más
 > de 50 líneas", "todo public API tiene test").
@@ -18,13 +18,13 @@
 
 ## Checkpoints generales (válidos en cualquier proyecto)
 
-- **C1.** `./init.sh` termina en verde.
-- **C2.** Todos los archivos nuevos siguen las convenciones de `docs/conventions.md`.
+- **C1.** `./harness/init.sh` termina en verde.
+- **C2.** Todos los archivos nuevos siguen las convenciones de `harness/docs/conventions.md`.
 - **C3.** Cada unidad pública nueva o modificada en `src/` tiene su test.
-- **C4.** La tarea respeta `docs/architecture.md` (capas, dependencias, módulos).
-- **C5.** `progress/current.md` está actualizado y refleja lo que se hizo.
+- **C4.** La tarea respeta `harness/docs/architecture.md` (capas, dependencias, módulos).
+- **C5.** `harness/progress/current.md` está actualizado y refleja lo que se hizo.
 - **C6.** No quedan TODO/FIXME sin contexto, `console.log`/`print` de debug, ni archivos temporales.
-- **C7.** El `acceptance` de la tarea (en `feature_list.json` / `hotfix_list.json`) se cumple punto por punto.
+- **C7.** El `acceptance` de la tarea (en `harness/feature_list.json` / `harness/hotfix_list.json`) se cumple punto por punto.
 
 ## Checkpoints específicos del proyecto
 

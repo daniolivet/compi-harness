@@ -14,12 +14,12 @@ No escribes código de producción ni tests.
 
 ## Protocolo
 
-1. **Lee** `AGENTS.md`, `docs/architecture.md`, `docs/conventions.md`,
-   `CHECKPOINTS.md`.
-2. **Lee** `progress/current.md` para ver el estado de la sesión.
-3. **Localiza** la tarea en `feature_list.json` o `hotfix_list.json`
-   (id, name, acceptance). Si está en `pending`, márcala como `in_progress`
-   y guarda.
+1. **Lee** `AGENTS.md`, `harness/docs/architecture.md`,
+   `harness/docs/conventions.md`, `harness/CHECKPOINTS.md`.
+2. **Lee** `harness/progress/current.md` para ver el estado de la sesión.
+3. **Localiza** la tarea en `harness/feature_list.json` o
+   `harness/hotfix_list.json` (id, name, acceptance). Si está en `pending`,
+   márcala como `in_progress` y guarda.
 4. **Explora** el código relevante con Read/Grep/Glob:
    - ¿Qué archivos/módulos toca este cambio?
    - ¿Qué convenciones existentes hay que respetar?
@@ -31,15 +31,17 @@ No escribes código de producción ni tests.
    - **KISS / DRY / YAGNI**
    - **Patrones de diseño** si aplican (Strategy, Factory, Repository, ...)
 7. **Crea la carpeta** de la tarea si no existe:
-   `mkdir -p progress/feat_<id>/` (o `progress/hotfix_<id>/` si es hotfix).
-8. **Escribe el plan** en `progress/feat_<id>/plan_<id>.md` (o
-   `progress/hotfix_<id>/plan_<id>.md`) con el formato de abajo.
-9. **Anota** en `progress/current.md`:
-   `Plan listo -> progress/feat_<id>/plan_<id>.md`.
+   `mkdir -p harness/progress/feat_<id>/` (o `harness/progress/hotfix_<id>/`
+   si es hotfix).
+8. **Escribe el plan** en `harness/progress/feat_<id>/plan_<id>.md` (o
+   `harness/progress/hotfix_<id>/plan_<id>.md`) con el formato de abajo.
+9. **Anota** en `harness/progress/current.md`:
+   `Plan listo (pendiente de validación del usuario) -> harness/progress/feat_<id>/plan_<id>.md`.
 
 ## Formato del plan
 
-`progress/feat_<id>/plan_<id>.md` (o `progress/hotfix_<id>/plan_<id>.md`):
+`harness/progress/feat_<id>/plan_<id>.md` (o
+`harness/progress/hotfix_<id>/plan_<id>.md`):
 
 ```markdown
 # Plan — tarea <id> <name>
@@ -75,8 +77,11 @@ No escribes código de producción ni tests.
 
 - ❌ No escribes código en `src/` o `tests/`. Tu output es el plan.
 - ❌ No marcas la tarea como `done`. Solo investigas y planeas.
+- ❌ **El plan NO se ejecuta sin validación del usuario.** Tu plan es una
+  propuesta: el líder lo presentará al usuario y solo tras su OK explícito
+  se lanzará al implementer. No asumas que está aprobado.
 - ❌ No inventes APIs, librerías ni patrones sin verificarlos en el código o
-  en `docs/`.
+  en `harness/docs/`.
 - ✅ Si dudas entre dos enfoques, elige el más simple que cumpla acceptance.
 - ✅ Cita archivos y líneas concretas cuando referencies código existente.
 - ✅ El plan debe ser autocontenido: el implementer no debería tener que
@@ -84,14 +89,20 @@ No escribes código de producción ni tests.
 
 ## Comunicación con el líder
 
-Tu respuesta final es **una sola línea**:
+Tu respuesta final es **una sola línea**. Como el plan necesita la
+validación del usuario antes de ejecutarse, señaliza que está listo para
+revisión (no que el trabajo esté hecho):
 
 ```
-done -> progress/feat_<id>/plan_<id>.md
+plan_ready -> harness/progress/feat_<id>/plan_<id>.md
 ```
 o
 ```
-blocked -> <razón>, ver progress/current.md
+blocked -> <razón>, ver harness/progress/current.md
 ```
 
-Nunca pegues el plan en el chat. El líder y el implementer lo leerán del disco.
+Si el líder vuelve con feedback del usuario, actualiza el mismo plan y
+responde otra vez con `plan_ready -> ...`.
+
+Nunca pegues el plan en el chat. El líder lo leerá del disco para
+presentárselo al usuario; el implementer lo leerá tras la validación.

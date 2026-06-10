@@ -1,8 +1,18 @@
 #!/usr/bin/env bash
 # init.sh — Verificación e inicialización del entorno
 #
-# Este script lo ejecuta el agente al COMENZAR una sesión y antes de
-# declarar cualquier tarea como `done`. Si falla, la sesión no debe avanzar.
+# CUÁNDO se ejecuta (política de verificación):
+#   1. Al PRINCIPIO del proceso — el `leader` lo corre al arrancar la sesión
+#      para confirmar que el entorno está verde antes de tocar nada.
+#   2. Al FINAL — el `reviewer` lo corre como puerta única de verificación
+#      (incluye los tests del proyecto vía ./scripts/check.sh).
+# El `implementer` NO lo ejecuta — ni este script ni los tests por su cuenta:
+# escribe código + tests y deja la verificación al reviewer. Tampoco lo
+# re-ejecuta al cerrar la tarea: se fía del verde del reviewer.
+#
+# Este script vive en `harness/` pero se ejecuta desde la raíz del proyecto
+# (p. ej. `./harness/init.sh`). Internamente hace `cd` a la raíz, así que
+# funciona sin importar desde dónde se invoque.
 #
 # El script es **stack-agnostic**: solo valida los ficheros base del arnés.
 # Los chequeos específicos del proyecto (toolchain, lint, typecheck, tests)
@@ -12,6 +22,11 @@
 # Salida esperada: códigos de salida claros y bloques marcados con [OK]/[FAIL].
 
 set -u
+
+# Posicionarse en la raíz del proyecto (el padre de harness/), de modo que
+# las rutas relativas de abajo sean estables sea cual sea el cwd del agente.
+cd "$(dirname "$0")/.." || { echo "[FAIL]  no pude cd a la raíz del proyecto"; exit 1; }
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
@@ -25,7 +40,7 @@ EXIT_CODE=0
 
 echo "── 1. Verificando archivos base del arnés ──────────────"
 
-for f in AGENTS.md feature_list.json hotfix_list.json progress/current.md docs/architecture.md docs/conventions.md docs/verification.md CHECKPOINTS.md; do
+for f in AGENTS.md CLAUDE.md harness/feature_list.json harness/hotfix_list.json harness/progress/current.md harness/docs/architecture.md harness/docs/conventions.md harness/docs/verification.md harness/CHECKPOINTS.md; do
   if [ ! -f "$f" ]; then
     fail "Falta archivo base: $f"
     EXIT_CODE=1
@@ -40,7 +55,7 @@ echo "── 2. Validando feature_list.json y hotfix_list.json ───"
 # Validación JSON con python3 (preinstalado en macOS/Linux). Si no hay
 # python3 disponible, se omite la validación con un WARN.
 if command -v python3 >/dev/null 2>&1; then
-  for list in feature_list.json hotfix_list.json; do
+  for list in harness/feature_list.json harness/hotfix_list.json; do
     [ -f "$list" ] || continue
     python3 - "$list" <<'PY'
 import json, sys

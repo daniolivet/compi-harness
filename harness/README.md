@@ -28,18 +28,24 @@ El arnés ataca cada una de esas causas con una regla escrita y una
 expectativa concreta:
 
 - `AGENTS.md` es el mapa: cualquier agente lo lee primero.
-- `docs/architecture.md` define qué es "buen código" en este proyecto.
-- `docs/conventions.md` define cómo se escribe.
-- `docs/verification.md` define cómo se demuestra que funciona.
-- `CHECKPOINTS.md` define cuándo se aprueba un cambio.
-- `feature_list.json` / `hotfix_list.json` son la cola de trabajo, con un
-  lifecycle único (`pending → in_progress → done`).
-- `progress/current.md` lleva la sesión en vivo; `progress/history.md` es
-  la bitácora append-only.
+- `harness/docs/architecture.md` define qué es "buen código" en este proyecto.
+- `harness/docs/conventions.md` define cómo se escribe.
+- `harness/docs/verification.md` define cómo se demuestra que funciona.
+- `harness/CHECKPOINTS.md` define cuándo se aprueba un cambio.
+- `harness/feature_list.json` / `harness/hotfix_list.json` son la cola de
+  trabajo, con un lifecycle único (`pending → in_progress → done`).
+- `harness/progress/current.md` lleva la sesión en vivo;
+  `harness/progress/history.md` es la bitácora append-only.
 - `agents/` son las definiciones de los subagentes (leader,
   researcher, implementer, reviewer) con sus protocolos.
-- `init.sh` es el guardián: valida estado del arnés y delega los chequeos
-  específicos del stack a `./scripts/check.sh`.
+- `harness/init.sh` es el guardián: valida estado del arnés y delega los
+  chequeos específicos del stack a `./scripts/check.sh`.
+
+> **Organización del repo.** Para no inundar la raíz del proyecto, casi todo
+> el arnés vive bajo `harness/`. Solo se quedan en la raíz `CLAUDE.md` y
+> `AGENTS.md` (los *entry files* que los agentes leen automáticamente; no
+> funcionarían anidados) y la carpeta `agents/` (para copiarla a
+> `.claude/agents/`). `src/` y `tests/` son del proyecto, no del arnés.
 
 ---
 
@@ -47,32 +53,33 @@ expectativa concreta:
 
 ```
 .
-├── CLAUDE.md                 # Entry para Claude Code. Asigna el rol de leader.
-├── AGENTS.md                 # Mapa del repositorio. Entry para Codex / OpenCode / Aider / etc.
-├── CHECKPOINTS.md            # Lista de criterios objetivos de aprobación.
-├── README.md                 # Este archivo.
-├── init.sh                   # Verificación del entorno. Llamar antes de empezar y antes de cerrar.
-├── feature_list.json         # Cola de features (pending / in_progress / done / blocked).
-├── hotfix_list.json          # Cola de hotfixes.
-├── docs/
-│   ├── architecture.md       # Decisiones arquitectónicas. Estándar de calidad.
-│   ├── conventions.md        # Estilo de código, nombres, estructura.
-│   └── verification.md       # Política de tests y mocking.
-├── progress/
-│   ├── current.md            # Estado de la sesión actual. Se vacía al cerrar.
-│   └── history.md            # Bitácora append-only.
-└── agents/
-    ├── leader.md             # Orquestador. No escribe código.
-    ├── researcher.md         # Produce el plan.
-    ├── implementer.md        # Ejecuta el plan + escribe tests.
-    └── reviewer.md           # Aprueba o rechaza.
+├── CLAUDE.md                     # Entry para Claude Code. Asigna el rol de leader.
+├── AGENTS.md                     # Mapa del repositorio. Entry para Codex / OpenCode / Aider / etc.
+├── agents/
+│   ├── leader.md                 # Orquestador. No escribe código.
+│   ├── researcher.md             # Produce el plan.
+│   ├── implementer.md            # Ejecuta el plan + escribe tests.
+│   └── reviewer.md               # Aprueba o rechaza.
+└── harness/
+    ├── README.md                 # Este archivo.
+    ├── CHECKPOINTS.md            # Lista de criterios objetivos de aprobación.
+    ├── init.sh                   # Verificación del entorno. Correr `./harness/init.sh` desde la raíz.
+    ├── feature_list.json         # Cola de features (pending / in_progress / done / blocked).
+    ├── hotfix_list.json          # Cola de hotfixes.
+    ├── docs/
+    │   ├── architecture.md       # Decisiones arquitectónicas. Estándar de calidad.
+    │   ├── conventions.md        # Estilo de código, nombres, estructura.
+    │   └── verification.md       # Política de tests y mocking.
+    └── progress/
+        ├── current.md            # Estado de la sesión actual. Se vacía al cerrar.
+        └── history.md            # Bitácora append-only.
 ```
 
-Cuando el arnés está vivo, en `progress/` también aparecen archivos
+Cuando el arnés está vivo, en `harness/progress/` también aparecen archivos
 temporales y persistentes:
 
 ```
-progress/
+harness/progress/
 ├── feat_<id>/                # Carpeta temporal de una feature en curso.
 │   ├── plan_<id>.md          # Plan del researcher. Se borra al cerrar.
 │   └── review_<id>.md        # Veredicto del reviewer. Se borra al cerrar.
@@ -87,53 +94,65 @@ progress/
 ## Lifecycle de una tarea
 
 ```
-   feature_list.json (status: pending)
+   harness/feature_list.json (status: pending)
             │
             ▼
    ┌─────────────────────────────────────────────┐
-   │ 1. leader pregunta: ¿feature o hotfix?     │
-   │ 2. leader elige tarea pending de menor id  │
-   │ 3. leader lanza researcher                  │
+   │ 1. leader corre ./harness/init.sh (principio)│
+   │ 2. leader pregunta: ¿feature o hotfix?       │
+   │ 3. leader elige tarea pending de menor id    │
+   │ 4. leader lanza researcher                   │
    └─────────────────────────────────────────────┘
             │
             ▼
    researcher
    ─ marca tarea in_progress
    ─ explora código, evalúa enfoques (SOLID/KISS/DRY)
-   ─ escribe progress/feat_<id>/plan_<id>.md
+   ─ escribe harness/progress/feat_<id>/plan_<id>.md
+            │
+            ▼
+   ⏸ VALIDACIÓN DEL USUARIO
+   ─ el leader presenta el plan al usuario
+   ─ no se avanza sin su OK explícito
+   ─ si pide cambios → vuelve al researcher
             │
             ▼
    implementer
-   ─ lee el plan
+   ─ lee el plan (ya validado)
    ─ implementa + escribe tests
-   ─ ejecuta ./init.sh hasta verde
+   ─ NO ejecuta tests ni init.sh (la verificación la hace el reviewer)
             │
             ▼
    reviewer
-   ─ recorre CHECKPOINTS.md
-   ─ ejecuta ./init.sh
-   ─ veredicto → progress/feat_<id>/review_<id>.md
+   ─ recorre harness/CHECKPOINTS.md
+   ─ ejecuta ./harness/init.sh (verificación "del final", puerta única)
+   ─ veredicto → harness/progress/feat_<id>/review_<id>.md
             │
        ┌────┴─────┐
        ▼          ▼
  CHANGES_REQ   APPROVED
        │          │
        │          ▼
-       │   implementer cierra:
-       │   ─ status: "done" en feature_list.json
+       │   implementer cierra (SIN re-correr init.sh):
+       │   ─ status: "done" en harness/feature_list.json
        │   ─ escribe researcher_<slug>.md,
        │     implementer_<slug>.md, reviewer_<slug>.md
        │   ─ mueve current.md → history.md
-       │   ─ rm -rf progress/feat_<id>/
+       │   ─ rm -rf harness/progress/feat_<id>/
        │
        └─→ vuelve a implementer
 ```
 
 Reglas duras del lifecycle:
 
-- **Una sola tarea `in_progress` a la vez.** `init.sh` falla si hay más.
-- **No se marca `done` sin `./init.sh` verde y sin `APPROVED` del reviewer.**
-- **`progress/current.md` se actualiza en vivo**, no al final.
+- **Una sola tarea `in_progress` a la vez.** `harness/init.sh` falla si hay más.
+- **El plan del researcher no se ejecuta sin validación explícita del usuario.**
+- **No se marca `done` sin `APPROVED` del reviewer** (que implica
+  `./harness/init.sh` verde).
+- **`./harness/init.sh` lo corren solo el leader (al principio) y el reviewer
+  (verificación, incluye los tests).** El implementer no ejecuta tests ni
+  `init.sh`, y no lo repite al cerrar: se fía del `APPROVED`.
+- **`harness/progress/current.md` se actualiza en vivo**, no al final.
 - **Los artefactos temporales (`feat_<id>/`, `hotfix_<id>/`) se borran al
   cerrar la tarea.** Los resúmenes históricos (`<rol>_<slug>.md`) se quedan.
 
@@ -141,8 +160,9 @@ Reglas duras del lifecycle:
 
 ## Cómo adoptarlo en un proyecto nuevo
 
-1. **Copia el contenido del arnés a la raíz del proyecto** (no como
-   subdirectorio):
+1. **Copia el contenido del arnés a la raíz del proyecto.** Conserva el
+   layout: `CLAUDE.md`, `AGENTS.md` y `agents/` quedan en la raíz, y todo
+   lo demás bajo `harness/`:
 
    ```bash
    # Desde el proyecto destino:
@@ -154,17 +174,17 @@ Reglas duras del lifecycle:
 
 2. **Rellena las plantillas con la realidad de tu stack:**
 
-   - `docs/architecture.md` — qué significa "buen código" aquí.
-   - `docs/conventions.md` — estilo, nombres, errores, logging.
-   - `docs/verification.md` — política de tests y mocking.
-   - `CHECKPOINTS.md` — añade los checkpoints específicos del proyecto.
-   - `feature_list.json` / `hotfix_list.json` — pon el nombre del proyecto
-     y la primera tarea pendiente.
-   - `progress/history.md` — borra la entrada de ejemplo.
+   - `harness/docs/architecture.md` — qué significa "buen código" aquí.
+   - `harness/docs/conventions.md` — estilo, nombres, errores, logging.
+   - `harness/docs/verification.md` — política de tests y mocking.
+   - `harness/CHECKPOINTS.md` — añade los checkpoints específicos del proyecto.
+   - `harness/feature_list.json` / `harness/hotfix_list.json` — pon el nombre
+     del proyecto y la primera tarea pendiente.
+   - `harness/progress/history.md` — borra la entrada de ejemplo.
 
-3. **Crea `scripts/check.sh`** con los chequeos reales del stack
-   (lint, typecheck, test, build). `init.sh` lo invoca automáticamente
-   si existe. Ejemplos:
+3. **Crea `scripts/check.sh`** (en la raíz del proyecto) con los chequeos
+   reales del stack (lint, typecheck, test, build). `harness/init.sh` lo
+   invoca automáticamente si existe. Ejemplos:
 
    ```bash
    # scripts/check.sh — Node
@@ -191,7 +211,7 @@ Reglas duras del lifecycle:
    go build ./...
    ```
 
-4. **Ejecuta `./init.sh`** y arregla todo lo que salga rojo antes de
+4. **Ejecuta `./harness/init.sh`** y arregla todo lo que salga rojo antes de
    empezar a meter tareas.
 
 5. **Si usas Claude Code y quieres descubrimiento nativo de subagentes**,
@@ -210,17 +230,17 @@ Reglas duras del lifecycle:
    flujo. Un buen primer prompt:
 
    > "Tengo una feature nueva: <descripción breve>. Añádela a
-   > `feature_list.json` y empezamos."
+   > `harness/feature_list.json` y empezamos."
 
 ---
 
 ## Setup guiado por agente
 
-Si no quieres rellenar las plantillas (`docs/*.md`, `CHECKPOINTS.md`,
-`scripts/check.sh`, las listas) a mano, copia este prompt y pégalo al
-agente justo después de copiar el arnés al proyecto. El agente te irá
-preguntando por bloques y dejará todo configurado, terminando con un
-`./init.sh` verde.
+Si no quieres rellenar las plantillas (`harness/docs/*.md`,
+`harness/CHECKPOINTS.md`, `scripts/check.sh`, las listas) a mano, copia este
+prompt y pégalo al agente justo después de copiar el arnés al proyecto. El
+agente te irá preguntando por bloques y dejará todo configurado, terminando
+con un `./harness/init.sh` verde.
 
 ```text
 Eres el setup wizard de este arnés (compi-harness). Esta es una sesión
@@ -235,11 +255,11 @@ bloques. Reglas:
 - Si respondo "no sé" o "no aplica", déjalo como "N/A" o borra la
   sección, pero NO inventes.
 - Si una respuesta es ambigua, repregunta antes de escribir.
-- Ficheros permitidos para tocar: `feature_list.json`,
-  `hotfix_list.json`, `docs/architecture.md`, `docs/conventions.md`,
-  `docs/verification.md`, `CHECKPOINTS.md`, `scripts/check.sh`, y
-  opcionalmente `.claude/agents/*.md`. Cualquier otro fichero está
-  fuera de alcance.
+- Ficheros permitidos para tocar: `harness/feature_list.json`,
+  `harness/hotfix_list.json`, `harness/docs/architecture.md`,
+  `harness/docs/conventions.md`, `harness/docs/verification.md`,
+  `harness/CHECKPOINTS.md`, `scripts/check.sh`, y opcionalmente
+  `.claude/agents/*.md`. Cualquier otro fichero está fuera de alcance.
 - No reescribas un fichero entero si solo cambia una sección: edita
   esa sección.
 
@@ -249,8 +269,9 @@ bloques. Reglas:
 - Nombre del proyecto (slug corto, sin espacios).
 - Descripción en 1-2 frases: qué hace, para quién, qué problema resuelve.
 
-→ Escribe el campo `project` en `feature_list.json` y `hotfix_list.json`.
-  Rellena la sección "Contexto" de `docs/architecture.md`.
+→ Escribe el campo `project` en `harness/feature_list.json` y
+  `harness/hotfix_list.json`. Rellena la sección "Contexto" de
+  `harness/docs/architecture.md`.
 
 **Bloque 2 — Stack y toolchain**
 - Lenguaje + versión (p. ej. TypeScript 5.x, Python 3.12, Go 1.22).
@@ -260,7 +281,7 @@ bloques. Reglas:
 
 → Crea `scripts/check.sh` con `set -e` y los comandos en orden
   (lint → typecheck → test → build). Hazlo ejecutable (`chmod +x`).
-  Rellena "Estilo del lenguaje" en `docs/conventions.md`.
+  Rellena "Estilo del lenguaje" en `harness/docs/conventions.md`.
 
 **Bloque 3 — Convenciones**
 - Nombres (ficheros, tipos/clases, funciones, constantes, privadas, enums).
@@ -272,14 +293,14 @@ bloques. Reglas:
 - Logger oficial y qué queda prohibido (`console.log`, `print`, …).
 - Asincronía: patrones que sí / patrones que no.
 
-→ Rellena `docs/conventions.md`. Borra las secciones que no apliquen.
+→ Rellena `harness/docs/conventions.md`. Borra las secciones que no apliquen.
 
 **Bloque 4 — Arquitectura**
 - 3-5 principios no negociables (qué + por qué).
 - Flujo de datos típico (descríbelo en prosa; tú lo conviertes a ASCII).
 - 3-5 anti-patrones concretos ("no se hace X porque Y").
 
-→ Rellena `docs/architecture.md`.
+→ Rellena `harness/docs/architecture.md`.
 
 **Bloque 5 — Verificación**
 - Framework de tests.
@@ -288,18 +309,19 @@ bloques. Reglas:
 - ¿Hay E2E / integración? Si sí: comando + qué dependencias reales se usan.
 - ¿Hay smoke manual? Si sí, cómo se arranca dev.
 
-→ Rellena `docs/verification.md`.
+→ Rellena `harness/docs/verification.md`.
 
 **Bloque 6 — Checkpoints específicos**
 Listame 3-7 checkpoints objetivos más allá de los genéricos C1-C7. Cada
 uno verificable sin opinar (mal: "código limpio"; bien: "ningún
 controller devuelve entidades de Prisma directamente").
 
-→ Añádelos como C8, C9, … en `CHECKPOINTS.md` y borra los ejemplos
+→ Añádelos como C8, C9, … en `harness/CHECKPOINTS.md` y borra los ejemplos
   placeholder.
 
 **Bloque 7 — Primera tarea (opcional)**
-¿Añado una primera entrada en `feature_list.json` o `hotfix_list.json`?
+¿Añado una primera entrada en `harness/feature_list.json` o
+`harness/hotfix_list.json`?
 Si sí: tipo, id, título, descripción de 1-2 frases, y criterios de
 aceptación en bullets. Si no, sáltalo.
 
@@ -312,7 +334,7 @@ descubrimiento nativo? (Sí/No)
 ---
 
 **Cierre**
-1. Ejecuta `./init.sh`.
+1. Ejecuta `./harness/init.sh`.
 2. Si está en verde, dime que el arnés está listo y cuál es el primer
    paso recomendado (lanzar al leader con la primera tarea, o pedirme
    una si nos saltamos el bloque 7).

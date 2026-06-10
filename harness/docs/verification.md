@@ -106,18 +106,25 @@ test** — no se cierra la tarea hasta añadirlo.
   filesystem / cola como la encontró.
 - ❌ **Snapshots gigantes de respuestas.** Snapshot mata revisión.
   Assertear campos concretos.
-- ❌ **Marcar la tarea como `done` sin pasar `./init.sh`.**
+- ❌ **Marcar la tarea como `done` sin pasar `./harness/init.sh`.**
 
 ## Verificación final antes de cerrar
 
+`./harness/init.sh` lo corre el `reviewer` como **puerta única de
+verificación** (incluye los tests del proyecto vía `./scripts/check.sh`). El
+`implementer` no ejecuta tests ni `init.sh` por su cuenta: escribe código +
+tests y deja la verificación al reviewer; tampoco lo re-ejecuta al marcar
+`done` (se fía del `APPROVED`). El `leader` lo corre una vez al principio
+para confirmar que el entorno está verde antes de arrancar.
+
 ```bash
-./init.sh
+./harness/init.sh
 ```
 
-Internamente `init.sh` delega los chequeos específicos del proyecto a
-`./scripts/check.sh` si existe — define ahí lo que sea relevante para tu
-stack (lint + typecheck + unit + e2e + build).
+Internamente `harness/init.sh` delega los chequeos específicos del proyecto a
+`./scripts/check.sh` (en la raíz del proyecto) si existe — define ahí lo que
+sea relevante para tu stack (lint + typecheck + unit + e2e + build).
 
-Si `./init.sh` está rojo, **no** se marca nada como `done`. El bloqueo se
-anota en `progress/current.md` con el comando que falla y la salida
+Si `./harness/init.sh` está rojo, **no** se marca nada como `done`. El bloqueo
+se anota en `harness/progress/current.md` con el comando que falla y la salida
 relevante.
