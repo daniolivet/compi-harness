@@ -1,10 +1,101 @@
 {
-  "project": "<project-name>",
+  "project": "compi-harness",
   "description": "List of pending features. One task at a time, not closed without green tests.",
   "rules": {
     "one_feature_at_a_time": true,
     "require_tests_to_close": true,
     "valid_status": ["pending", "in_progress", "done", "blocked"]
   },
-  "features": []
+  "features": [
+    {
+      "id": 1,
+      "title": "Tests + CI + anti-drift templates",
+      "status": "done",
+      "depends_on": [],
+      "description": "Montar test runner, tests unitarios y E2E del CLI, test anti-drift entre harness/ y templates/, CI en GitHub Actions, prepublishOnly, LICENSE y versión leída de package.json.",
+      "acceptance": [
+        "Existe `npm test` que corre un test runner (Vitest o node:test) y pasa.",
+        "Tests unitarios cubren scaffolder.ts (idempotencia), writers.ts (placeholder), registry.ts (adapters válidos) y applyProjectName (idempotente).",
+        "Tests E2E: `compi-harness init` en tmpdir por cada adapter (claude-code, codex, opencode, aider, cursor, copilot) → archivos correctos creados y `./harness/init.sh` green.",
+        "Test anti-drift: compara recursivamente harness/ ↔ templates/base/harness/ y agents/ ↔ templates/agents/; falla si difieren.",
+        "Workflow de GitHub Actions corre build + test en push/PR.",
+        "Existe LICENSE (MIT) y `bin/cli.ts` lee la versión de package.json en lugar de hardcodear '0.1.0'.",
+        "`prepublishOnly` en package.json ejecuta `npm run build`.",
+        "Tras la feature, `./scripts/check.sh` existe y pasa (lint/typecheck/test/build) — es el propio check del meta-repo."
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Stack detection + auto scripts/check.sh",
+      "status": "pending",
+      "depends_on": [1],
+      "description": "Detectar el stack del repo destino (node, python, go, rust) y generar `scripts/check.sh` con los comandos correctos, integrado en `init` y re-generable con `--check-sh`.",
+      "acceptance": [
+        "Detector reconoce package.json (node), pyproject.toml/requirements.txt (python), go.mod (go), Cargo.toml (rust).",
+        "`init` genera `scripts/check.sh` con `set -e` + comandos por stack y lo deja ejecutable (chmod +x).",
+        "Flag `--check-sh` regenera `scripts/check.sh` a demanda sin reinstalar el arnés.",
+        "Tests cubren detección por cada stack y el contenido generado (snapshots).",
+        "`init` pregunta antes de sobrescribir un `scripts/check.sh` preexistente del usuario."
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Commands: add-feature / add-hotfix / close / list",
+      "status": "pending",
+      "depends_on": [1],
+      "description": "Gestión de la cola de tareas desde la CLI sin tocar los JSON a mano: alta con ID único validado, listado filtrado, y cierre mecánico (current→history, rm feat_<id>/).",
+      "acceptance": [
+        "`compi-harness add-feature --title --desc --acceptance` añade a feature_list.json con id único (max+1) y estado pending, validando el esquema.",
+        "`compi-harness add-hotfix` hace lo mismo sobre hotfix_list.json.",
+        "`compi-harness list [--status] [--type]` imprime la cola filtrada.",
+        "`compi-harness close [--id]` marca done, mueve current.md → history.md, borra harness/progress/feat_<id>/ y restaura current.md al template.",
+        "Tests: ids únicos, validación de estados, close idempotente, sin tocar tareas no especificadas."
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Interactive 8-block interview",
+      "status": "pending",
+      "depends_on": [1, 2, 3],
+      "description": "Implementar los 8 bloques del 'Agent-guided setup' como flujo @clack/prompts dentro de init (o subcomando config), escribiendo docs/*.md, CHECKPOINTS.md y las lists.",
+      "acceptance": [
+        "`compi-harness init --interview` (o subcomando `config`) recorre los 8 bloques uno a uno con @clack/prompts.",
+        "Cada bloque escribe solo el archivo correspondiente (architecture.md, conventions.md, verification.md, CHECKPOINTS.md, scripts/check.sh, lists).",
+        "Si el usuario responde 'N/A' o 'no aplica', la sección se omite o se marca N/A sin inventar contenido.",
+        "Bloque 2 reusa la detección de stack (F2) para pre-llenar comandos.",
+        "Bloque 7 reusa add-feature/add-hotfix (F3) para dar de alta la primera tarea.",
+        "Al cerrar, corre `./harness/init.sh` y reporta verde o lista los [FAIL].",
+        "Tests: snapshots de los archivos generados por combinaciones representativas de respuestas."
+      ]
+    },
+    {
+      "id": 5,
+      "title": "harness/.meta.json + check + doctor",
+      "status": "pending",
+      "depends_on": [1, 3],
+      "description": "Marcador de versión instalada en harness/.meta.json, comando `check` (validación sin correr tests) y `doctor` (recorre CHECKPOINTS del arnés y sugiere fixes).",
+      "acceptance": [
+        "`init` escribe `harness/.meta.json` con { version, agent, installedAt, stack }.",
+        "La guardia de idempotencia usa `.meta.json` como marcador propio (no solo AGENTS.md+harness/).",
+        "`compi-harness check` valida archivos base, JSON válidos, ≤1 in_progress, scripts/check.sh presente — sin correr tests.",
+        "`compi-harness doctor` detecta placeholders `<...>` sueltos, docs sin rellenar, scripts/check.sh ausente, >1 in_progress, y sugiere fixes concretos.",
+        "Tests: `check` detecta cada fallo inyectado; `doctor` sugiere el fix correcto para cada caso."
+      ]
+    },
+    {
+      "id": 6,
+      "title": "update command (with merge/diff)",
+      "status": "pending",
+      "depends_on": [1, 5],
+      "description": "Implementar `compi-harness update` de verdad: comparar versión instalada vs CLI, sobrescribir plantillas no editadas, diff/confirmación para editadas, y `--check` (dry-run).",
+      "acceptance": [
+        "`update` compara harness/.meta.json.version con la versión del CLI y avisa si están igualadas.",
+        "Archivos de plantilla no editados por el usuario (identidad byte a byte con la versión original) se sobrescriben sin preguntar.",
+        "Archivos editados (architecture.md, conventions.md, verification.md, CHECKPOINTS.md) muestran diff y piden confirmación; `--keep-user-files` los preserva.",
+        "`update --check` (dry-run) lista qué cambiaría sin tocar nada.",
+        "Tras `update`, `./harness/init.sh` sigue verde.",
+        "Tests: simulación de archivo editado vs no editado, dry-run no muta el árbol, idempotencia."
+      ]
+    }
+  ]
 }
