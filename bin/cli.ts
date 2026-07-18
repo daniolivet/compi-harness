@@ -1,6 +1,14 @@
 #!/usr/bin/env node
 import { Command } from 'commander'
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import { dirname, join } from 'node:path'
 import { runInit } from '../src/commands/init.js'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const pkg = JSON.parse(
+  readFileSync(join(__dirname, '..', 'package.json'), 'utf8'),
+) as { version: string }
 
 const program = new Command()
 
@@ -9,7 +17,7 @@ program
   .description(
     'Install and configure the compi-harness in your repository, adapted to your AI coding tool.',
   )
-  .version('0.1.0')
+  .version(pkg.version)
 
 program
   .command('init')
